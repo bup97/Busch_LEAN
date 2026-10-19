@@ -1,0 +1,17 @@
+{
+  "name": "Muda-Aufnahme Montage",
+  "short_name": "Muda",
+  "description": "Verschwendung, Montagezeiten, Laufwege und Greifzonen in der Montage aufnehmen und auswerten.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ECEFEC",
+  "theme_color": "#0B6E66",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

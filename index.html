@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="de">
+<head>
+<title>Muda-Aufnahme Montage</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B6E66">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Muda">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+html{-webkit-text-size-adjust:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+
+/* Layout: sticky Reiterleiste oben, darunter Arbeitsbereich; Aufnahme = Kartenraster aller Arbeitsplätze (3×2 auf Tablet quer) */
+:root{
+  --bg:#ECEFEC; --panel:#FFFFFF; --panel2:#F5F7F5; --ink:#18201D; --muted:#5D6762; --line:#D2D8D4;
+  --accent:#0B6E66; --accent-ink:#FFFFFF; --accent-soft:#DDEFEC;
+  --waste:#C25F16; --waste-soft:#FBE9DA; --danger:#B3261E; --danger-soft:#F8E1DF; --ok:#2E7D32; --warn:#B8860B;
+  --f-disp:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111614; --panel:#1A201E; --panel2:#151a18; --ink:#E4E9E6; --muted:#97A29D; --line:#2B3330;
+  --accent:#3DB0A3; --accent-ink:#0B1513; --accent-soft:#163430;
+  --waste:#EE9450; --waste-soft:#3A2516; --danger:#F07167; --danger-soft:#3B1A18; --ok:#6CC070; --warn:#E0B54A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111614; --panel:#1A201E; --panel2:#151a18; --ink:#E4E9E6; --muted:#97A29D; --line:#2B3330;
+  --accent:#3DB0A3; --accent-ink:#0B1513; --accent-soft:#163430;
+  --waste:#EE9450; --waste-soft:#3A2516; --danger:#F07167; --danger-soft:#3B1A18; --ok:#6CC070; --warn:#E0B54A; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.4;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--panel)}
+button,select,input{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--f-disp);font-weight:700;margin:0;text-wrap:balance;letter-spacing:.01em}
+.num{font-variant-numeric:tabular-nums}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1500px;margin:0 auto}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--panel);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:14px;padding-block:8px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:8px;min-width:0}
+.brand h1{font-size:22px;text-transform:uppercase;letter-spacing:.04em}
+.brand small{color:var(--muted);font-size:12px}
+.tabs{display:flex;gap:4px;overflow-x:auto;flex:1 1 auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{border:0;background:transparent;padding:8px 12px;border-radius:8px;font-family:var(--f-disp);font-weight:600;font-size:16px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);white-space:nowrap;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--panel)}
+.tab:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.status{font-size:12px;color:var(--muted);white-space:nowrap;display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.ok{background:var(--ok)} .dot.live{background:var(--waste);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.dot.live{animation:none}}
+
+main{padding-block:16px 40px}
+.sec-h{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.sec-h h2{font-size:26px}
+.hint{color:var(--muted);font-size:13px;max-width:70ch}
+
+/* buttons */
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.wst{background:var(--waste);border-color:var(--waste);color:#fff}
+.btn.dng{color:var(--danger);border-color:var(--danger)}
+.btn.armed{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn.sm{min-height:34px;padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+select,input[type=text],input[type=number]{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 10px;min-height:40px;max-width:100%}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;min-height:34px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.chip.w[aria-pressed="true"]{background:var(--waste);border-color:var(--waste);color:#fff}
+
+/* Aufnahme grid */
+.grid-st{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.st{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.st.is-waste{border-color:var(--waste);box-shadow:0 0 0 1px var(--waste)}
+.st-h{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.st-h h3{font-size:20px;line-height:1}
+.worker{color:var(--muted);font-size:13px;margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:50%}
+.badge{font-family:var(--f-disp);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:4px;border:1.5px solid currentColor}
+.badge.VM{color:#3D6FB6} .badge.EM{color:var(--accent)}
+.blk{padding:10px 12px;display:grid;gap:8px}
+.blk+.blk{border-top:1px dashed var(--line)}
+.blk-l{font-family:var(--f-disp);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.trow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.trow select{flex:1 1 140px;min-width:0}
+.timer{font-family:var(--f-mono);font-weight:700;font-size:30px;line-height:1;letter-spacing:-.02em}
+.st.is-run .prod .timer{color:var(--accent)}
+.waste-run{background:var(--waste-soft);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.waste-run .timer{color:var(--waste);font-size:26px}
+.waste-run .lbl{font-weight:600;flex:1 1 auto;min-width:0}
+.pause-run{background:var(--panel2);border:1px dashed var(--muted);border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:10px}
+.pause-run .lbl{font-weight:600;flex:1 1 auto;color:var(--muted)}
+.pause-run .timer{font-size:20px;color:var(--muted)}
+.st.is-pause{opacity:.92}
+.st.is-pause .prod .timer{color:var(--muted)}
+.meta{font-size:12.5px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.meta b{color:var(--ink);font-weight:600}
+.st-f{margin-top:auto;padding:8px 12px;background:var(--panel2);border-top:1px solid var(--line);display:flex;gap:12px;font-size:13px;flex-wrap:wrap}
+.st-f b{font-family:var(--f-mono);font-weight:700}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;flex:1 1 80px;align-self:center}
+.bar i{display:block;height:100%;background:var(--waste)}
+
+/* panels */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.panel h3{font-size:19px;margin-bottom:10px}
+.cols{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
+.kpi span{display:block;font-family:var(--f-disp);font-weight:600;text-transform:uppercase;letter-spacing:.07em;font-size:12px;color:var(--muted)}
+.kpi b{font-family:var(--f-mono);font-size:22px;font-weight:700}
+.kpi.w b{color:var(--waste)}
+.pie-wrap{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.pie-wrap svg{flex:0 0 auto;width:170px;height:170px;max-width:100%}
+.legend{flex:1 1 180px;min-width:0;display:grid;gap:4px;font-size:13px}
+.legend div{display:grid;grid-template-columns:12px 1fr auto auto;gap:8px;align-items:center}
+.legend i{width:12px;height:12px;border-radius:3px}
+.legend em{font-style:normal;color:var(--muted);font-family:var(--f-mono);font-size:12px}
+.legend strong{font-family:var(--f-mono);font-size:12px;min-width:44px;text-align:right}
+.multi{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.multi .panel h3{font-size:17px;display:flex;align-items:center;gap:8px}
+.multi .pie-wrap svg{width:120px;height:120px}
+.tbl-w{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-family:var(--f-disp);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted)}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+.empty{color:var(--muted);font-size:14px;padding:18px;text-align:center;border:1px dashed var(--line);border-radius:8px}
+.mt{margin-top:12px}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+
+/* drawing areas */
+.draw-cols{display:grid;gap:12px;grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr)}
+@media (max-width:860px){.draw-cols{grid-template-columns:1fr}}
+.canvas{width:100%;height:auto;display:block;border-radius:8px;background:var(--panel2);touch-action:manipulation;cursor:crosshair;user-select:none;-webkit-user-select:none}
+.toolbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--panel);padding:8px 12px;font-weight:600;cursor:pointer;min-height:40px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.stat-list{display:grid;gap:6px;font-size:14px}
+.stat-list div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:5px}
+.stat-list b{font-family:var(--f-mono)}
+.lights{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.light{flex:1 1 90px;border-radius:8px;padding:8px 10px;font-size:13px}
+.light b{display:block;font-family:var(--f-mono);font-size:20px}
+.light.g{background:color-mix(in srgb,var(--ok) 16%,transparent)} .light.y{background:color-mix(in srgb,var(--warn) 18%,transparent)} .light.r{background:color-mix(in srgb,var(--danger) 16%,transparent)}
+
+/* setup */
+.ed-row{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.2fr) 150px auto;gap:8px;align-items:center;padding-block:6px;border-bottom:1px solid var(--line)}
+.ed-row.t{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) 70px auto}
+.ed-row.p{grid-template-columns:minmax(0,1fr) 70px auto}
+@media (max-width:620px){.ed-row,.ed-row.t{grid-template-columns:1fr 1fr}}
+.ed-row input,.ed-row select{width:100%}
+.cnt{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:right}
+
+/* modal */
+.modal{position:fixed;inset:0;z-index:50;background:rgba(10,14,12,.5);display:grid;place-items:center;padding:16px}
+.modal-c{background:var(--panel);border-radius:12px;padding:18px;width:min(440px,100%);display:grid;gap:12px;border:1px solid var(--line)}
+.modal-c label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.modal-c input,.modal-c select,.modal-c textarea{width:100%}
+.modal-c textarea{min-height:200px;font-family:var(--f-mono);font-size:11px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);padding:8px}
+.modal-a{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:8px;z-index:60;font-weight:600;max-width:calc(100% - 32px)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><h1>Muda-Aufnahme</h1><small id="clock" class="num"></small></div>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+    <div class="status" id="status"><span class="dot"></span><span>Lädt…</span></div>
+  </div>
+</header>
+<main class="wrap" id="app"></main>
+<div id="modal-root"></div>
+
+<script>
+(()=>{
+/* ---------- Konstanten ---------- */
+const MUDA = {
+  T:{n:"Transport",c:"#3D6FB6"}, I:{n:"Bestände",c:"#8A6BBE"}, M:{n:"Bewegung",c:"#D9822B"},
+  W:{n:"Warten",c:"#C2416A"}, O:{n:"Überbearbeitung",c:"#6E8B2E"}, P:{n:"Überproduktion",c:"#A88A1E"},
+  D:{n:"Fehler / Nacharbeit",c:"#8B5A3C"}, S:{n:"Sonstiges",c:"#7C8783"}
+};
+const PAL = ["#0B8278","#D9822B","#3D6FB6","#C2416A","#6E8B2E","#8A6BBE","#A88A1E","#4E93B5","#8B5A3C","#C2549A","#4C9A6A","#7C8783","#B5651D","#5E6CC4"];
+const ZONES = {1:"Zone 1 · Hauptgreifraum",2:"Zone 2 · Erweiterter Greifraum",3:"Zone 3 · Oberkörper beugen/drehen",4:"Zone 4 · Außerhalb, Schritt nötig"};
+const ZONE_C = {1:"#2E7D32",2:"#8BAA2E",3:"#D9A21E",4:"#C2416A"};
+const DIRS = {V:"Vorne",L:"Links",R:"Rechts",H:"Hinten"};
+const DIR_C = {V:"#0B8278",L:"#3D6FB6",R:"#8A6BBE",H:"#C2416A"};
+const TABS = [["auf","Aufnahme"],["spa","Spaghetti"],["gre","Greifraum"],["aus","Auswertung"],["pro","Protokoll"],["dat","Einrichtung & Export"]];
+const LS_KEY = "muda-aufnahme-v1";
+
+/* ---------- Helfer ---------- */
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const now = () => Date.now();
+const pad = n => String(n).padStart(2,"0");
+function fmt(ms){ ms=Math.max(0,ms|0); const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor(s%3600/60); return h?`${h}:${pad(m)}:${pad(s%60)}`:`${pad(m)}:${pad(s%60)}`; }
+const de1 = n => n.toLocaleString("de-DE",{maximumFractionDigits:1,minimumFractionDigits:1});
+const de0 = n => Math.round(n).toLocaleString("de-DE");
+const pct = (a,b) => b>0 ? de1(a/b*100)+" %" : "–";
+const tod = t => { const d=new Date(t); return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
+const dts = t => { if(!t) return ""; const d=new Date(t); return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${tod(t)}`; };
+const secs = ms => Math.round(ms/100)/10;
+
+/* ---------- Zustand ---------- */
+function freshState(){
+  const st = [["VM 1","VM"],["VM 2","VM"],["VM 3","VM"],["EM 1","EM"],["EM 2","EM"],["EM 3","EM"]].map(([n,t])=>({id:uid(),name:n,worker:"",type:t,productId:null}));
+  const types = [["Teile suchen","M"],["Werkzeug holen","M"],["Material holen","T"],["Warten auf Material","W"],["Warten auf Vorgänger","W"],["Nacharbeit","D"],["Verpackung entfernen","O"],["Rückfragen / Klärung","S"]]
+    .map(([n,m])=>({id:uid(),name:n,muda:m}));
+  const spa = {}; st.forEach(s=>spa[s.id]={w:10,h:6,landmarks:[],pts:[]});
+  return {v:1,savedAt:0,stations:st,wasteTypes:types,products:[],runs:[],wastes:[],grips:[],spa};
+}
+let S = freshState();
+const UI = {tab:"auf",scope:"all",spaSid:null,spaMode:"weg",greSid:null,greScope:"all",proSid:"all"};
+
+function loadLocal(){
+  try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const d=JSON.parse(raw); if(d&&d.stations) S=normalize(d);} }catch(e){}
+  try{ const t=localStorage.getItem(LS_KEY+"-tab"); if(t&&TABS.some(x=>x[0]===t)) UI.tab=t; }catch(e){}
+}
+function normalize(d){
+  const f=freshState();
+  d.stations=d.stations||[]; d.wasteTypes=d.wasteTypes||f.wasteTypes; d.products=d.products||[];
+  d.runs=d.runs||[]; d.wastes=d.wastes||[]; d.grips=d.grips||[]; d.spa=d.spa||{};
+  d.stations.forEach(s=>{ if(!d.spa[s.id]) d.spa[s.id]={w:10,h:6,landmarks:[],pts:[]}; });
+  return d;
+}
+
+/* ---------- Speichern (lokal + Cloud) ---------- */
+let db=null, dbRef=null, saveTimer=null, saving=false, pendingSave=false, cloudState="local", tooBig=false;
+function commit(){ S.savedAt=now(); try{localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){} clearTimeout(saveTimer); saveTimer=setTimeout(cloudSave,900); render(); }
+async function cloudSave(){
+  if(!dbRef) return;
+  if(saving){ pendingSave=true; return; }
+  const json=JSON.stringify(S);
+  if(json.length>240000){ tooBig=true; setStatus(); return; }
+  tooBig=false; saving=true;
+  try{ await dbRef.set({json,savedAt:S.savedAt}); cloudState="cloud"; }catch(e){ cloudState="err"; }
+  saving=false; setStatus();
+  if(pendingSave){ pendingSave=false; cloudSave(); }
+}
+async function initCloud(){
+  try{
+    if(!window.claude||!window.claude.use) return;
+    const [d,u]=await Promise.all([window.claude.use("db"),window.claude.use("user")]);
+    if(!d||!u) return;
+    const id=await u.id(); if(!id) return;
+    db=d; dbRef=db.doc("data/users/"+id+"/aufnahme");
+    const snap=await dbRef.get();
+    if(snap.exists){
+      const data=snap.data();
+      if(data&&data.json&&(data.savedAt||0)>(S.savedAt||0)){
+        S=normalize(JSON.parse(data.json));
+        try{localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){}
+        render();
+      } else if((S.savedAt||0)>(data?.savedAt||0)) cloudSave();
+    } else if(S.savedAt) cloudSave();
+    cloudState="cloud"; setStatus();
+  }catch(e){ cloudState="local"; setStatus(); }
+}
+function setStatus(){
+  const live = S.wastes.some(w=>!w.end)||S.runs.some(r=>!r.end);
+  let txt = cloudState==="cloud"?"In deinem Konto gespeichert":cloudState==="err"?"Cloud-Speichern fehlgeschlagen, lokal gesichert":"Auf diesem Gerät gespeichert";
+  if(tooBig) txt="Daten zu groß für Cloud, lokal gesichert – bitte exportieren";
+  $("#status").innerHTML=`<span class="dot ${live?"live":(cloudState==="cloud"?"ok":"")}"></span><span>${live?"Messung läuft · ":""}${txt}</span>`;
+}
+
+/* ---------- Abfragen ---------- */
+const stById = id => S.stations.find(s=>s.id===id);
+const typeById = id => S.wasteTypes.find(t=>t.id===id);
+const prodById = id => S.products.find(p=>p.id===id);
+const runOf = sid => S.runs.find(r=>r.stationId===sid&&!r.end);
+const wasteOf = sid => S.wastes.find(w=>w.stationId===sid&&!w.end);
+const pausedMs = x => (x.pauses||[]).reduce((a,p)=>a+Math.max(0,(p.end||x.end||now())-p.start),0);
+const dur = x => Math.max(0,(x.end||now())-x.start-pausedMs(x));
+const isPaused = r => !!(r&&r.pauses&&r.pauses.length&&!r.pauses[r.pauses.length-1].end);
+const closePause = (r,t) => { if(isPaused(r)) r.pauses[r.pauses.length-1].end=t; };
+const typeColor = id => { const i=S.wasteTypes.findIndex(t=>t.id===id); return PAL[(i<0?0:i)%PAL.length]; };
+function rawOv(s1,e1,s2,e2){ return Math.max(0,Math.min(e1,e2)-Math.max(s1,s2)); }
+function overlap(a,b){ const ae=a.end||now(), be=b.end||now(); let o=rawOv(a.start,ae,b.start,be); (b.pauses||[]).forEach(p=>o-=rawOv(a.start,ae,p.start,p.end||be)); return Math.max(0,o); }
+function inScope(sid,scope){ if(scope==="all") return true; if(scope==="VM"||scope==="EM") return stById(sid)?.type===scope; return sid===scope; }
+function typeUsage(sid){ const m={}; S.wastes.forEach(w=>{ if(!sid||w.stationId===sid) m[w.typeId]=(m[w.typeId]||0)+1; }); return m; }
+function stationStats(sid){
+  const runs=S.runs.filter(r=>r.stationId===sid), done=runs.filter(r=>r.end);
+  const wastes=S.wastes.filter(w=>w.stationId===sid);
+  const wsum=wastes.reduce((a,w)=>a+dur(w),0);
+  const rsum=runs.reduce((a,r)=>a+dur(r),0);
+  const winRuns=wastes.reduce((a,w)=>a+runs.reduce((b,r)=>b+overlap(w,r),0),0);
+  const avg=done.length?done.reduce((a,r)=>a+dur(r),0)/done.length:0;
+  return {done:done.length,avg,last:done.length?dur(done[done.length-1]):0,wsum,rsum,winRuns,n:wastes.length};
+}
+
+/* ---------- Aktionen Messung ---------- */
+let wakeLock=null;
+async function keepAwake(){ try{ if(!wakeLock&&navigator.wakeLock){ wakeLock=await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release",()=>wakeLock=null);} }catch(e){} }
+function startRun(sid){
+  const s=stById(sid); if(!s.productId){ return openProductModal(sid,true); }
+  S.runs.push({id:uid(),stationId:sid,productId:s.productId,start:now(),end:null}); keepAwake(); commit();
+}
+function nextRun(sid){
+  const r=runOf(sid); const t=now();
+  if(r){ closePause(r,t); r.end=t; const w=wasteOf(sid); if(w&&w.runId===r.id){ /* Verschwendung läuft weiter: neuem Zyklus zuordnen */ w.end=t; S.wastes.push({id:uid(),stationId:sid,typeId:w.typeId,start:t,end:null,runId:null}); } }
+  const s=stById(sid); const nr={id:uid(),stationId:sid,productId:s.productId,start:t,end:null}; S.runs.push(nr);
+  const w2=wasteOf(sid); if(w2&&!w2.runId) w2.runId=nr.id;
+  commit(); toast(`${s.name}: Teil abgeschlossen (${fmt(r?dur(r):0)})`);
+}
+function stopRun(sid){ const r=runOf(sid); if(r){ const t=now(); closePause(r,t); r.end=t; commit(); } }
+function pauseRun(sid,silent){ const r=runOf(sid); if(!r||isPaused(r)) return; const t=now(); const w=wasteOf(sid); if(w) w.end=t; (r.pauses=r.pauses||[]).push({start:t,end:null}); if(!silent) commit(); }
+function resumeRun(sid,silent){ const r=runOf(sid); if(!isPaused(r)) return; closePause(r,now()); if(!silent) commit(); }
+function startWaste(sid,typeId){
+  const cur=wasteOf(sid); const t=now();
+  if(cur){ cur.end=t; if(cur.typeId===typeId){ commit(); return; } }
+  const r=runOf(sid); closePause(r,t);
+  S.wastes.push({id:uid(),stationId:sid,typeId,start:t,end:null,runId:r?r.id:null}); keepAwake(); commit();
+}
+function stopWaste(sid){ const w=wasteOf(sid); if(w){ w.end=now(); commit(); } }
+
+/* ---------- Modal ---------- */
+function modal(html,onSubmit){
+  const root=$("#modal-root");
+  root.innerHTML=`<div class="modal" id="mdl"><form class="modal-c" id="mdlf">${html}</form></div>`;
+  const f=$("#mdlf");
+  const close=()=>root.innerHTML="";
+  f.addEventListener("submit",e=>{ e.preventDefault(); const fd=Object.fromEntries(new FormData(f)); if(onSubmit(fd)!==false) close(); });
+  f.querySelector("[data-cancel]")?.addEventListener("click",close);
+  $("#mdl").addEventListener("click",e=>{ if(e.target.id==="mdl") close(); });
+  setTimeout(()=>f.querySelector("input,textarea")?.focus(),30);
+}
+function openWasteTypeModal(sid){
+  const t0=now(); // Zeit läuft ab dem Antippen, auch während der Name eingegeben wird
+  if(sid) keepAwake();
+  const opts=Object.entries(MUDA).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join("");
+  modal(`<h3>Neue Verschwendungsart</h3>
+    ${sid?`<div class="waste-run"><span class="lbl">${esc(stById(sid)?.name)} · Zeit läuft</span><span class="timer num" data-tick="${t0}">00:00</span></div>`:""}
+    <label>Bezeichnung<input type="text" name="n" id="m-wn" required maxlength="60" placeholder="z. B. Schrauben nachfüllen"></label>
+    <label>Muda-Kategorie<select name="m" id="m-wm">${opts}</select></label>
+    <p class="hint">Steht danach an allen Arbeitsplätzen im Auswahlfeld.${sid?" Die Zeit zählt seit dem Antippen. Abbrechen verwirft sie.":""}</p>
+    <div class="modal-a"><button type="button" class="btn" data-cancel>Abbrechen</button><button class="btn ${sid?"wst":"pri"}">${sid?"Speichern, Zeit läuft weiter":"Anlegen"}</button></div>`,
+  fd=>{ const n=fd.n.trim(); if(!n) return false;
+    let t=S.wasteTypes.find(x=>x.name.toLowerCase()===n.toLowerCase());
+    if(!t){ t={id:uid(),name:n,muda:fd.m}; S.wasteTypes.push(t); }
+    if(sid){
+      const cur=wasteOf(sid);
+      if(cur){ cur.end=Math.max(cur.start,t0); }
+      const r=S.runs.find(x=>x.stationId===sid&&x.start<=t0&&(!x.end||x.end>t0)); closePause(runOf(sid),t0);
+      S.wastes.push({id:uid(),stationId:sid,typeId:t.id,start:t0,end:null,runId:r?r.id:null});
+    }
+    commit(); });
+}
+function openProductModal(sid,autostart){
+  modal(`<h3>Produkt anlegen</h3>
+    <label>Produktbezeichnung / Sachnummer<input type="text" name="n" id="m-pn" required maxlength="60" placeholder="z. B. Anzeige 4711-B"></label>
+    <div class="modal-a"><button type="button" class="btn" data-cancel>Abbrechen</button><button class="btn pri">${autostart?"Anlegen & Zeit starten":"Anlegen"}</button></div>`,
+  fd=>{ const n=fd.n.trim(); if(!n) return false;
+    let p=S.products.find(x=>x.name.toLowerCase()===n.toLowerCase()); if(!p){ p={id:uid(),name:n}; S.products.push(p); }
+    if(sid){ const s=stById(sid); s.productId=p.id; const r=runOf(sid); if(r) r.productId=p.id; }
+    if(sid&&autostart){ S.runs.push({id:uid(),stationId:sid,productId:p.id,start:now(),end:null}); keepAwake(); }
+    commit(); });
+}
+let toastT;
+function toast(msg){ let el=$(".toast"); if(!el){ el=document.createElement("div"); el.className="toast"; el.setAttribute("role","status"); document.body.appendChild(el);} el.textContent=msg; clearTimeout(toastT); toastT=setTimeout(()=>el.remove(),2600); }
+
+/* ---------- Diagramme ---------- */
+function pie(items,{size=170,center=""}={}){
+  const tot=items.reduce((a,b)=>a+b.v,0);
+  if(!tot) return `<div class="empty">Noch keine Daten</div>`;
+  const R=80, r0=48, cx=100, cy=100; let a0=-Math.PI/2, paths="";
+  const pt=(rad,a)=>[cx+rad*Math.cos(a),cy+rad*Math.sin(a)];
+  items.forEach(it=>{
+    if(!it.v) return;
+    const frac=it.v/tot;
+    if(frac>0.9999){ paths+=`<circle cx="${cx}" cy="${cy}" r="${(R+r0)/2}" fill="none" stroke="${it.c}" stroke-width="${R-r0}"><title>${esc(it.l)}</title></circle>`; return; }
+    const a1=a0+frac*2*Math.PI, lg=frac>.5?1:0;
+    const [x0,y0]=pt(R,a0),[x1,y1]=pt(R,a1),[x2,y2]=pt(r0,a1),[x3,y3]=pt(r0,a0);
+    paths+=`<path d="M${x0} ${y0}A${R} ${R} 0 ${lg} 1 ${x1} ${y1}L${x2} ${y2}A${r0} ${r0} 0 ${lg} 0 ${x3} ${y3}Z" fill="${it.c}" stroke="var(--panel)" stroke-width="1.5"><title>${esc(it.l)}: ${pct(it.v,tot)}</title></path>`;
+    a0=a1;
+  });
+  const leg=items.filter(i=>i.v).map(i=>`<div><i style="background:${i.c}"></i><span>${esc(i.l)}</span><em>${i.fmt?i.fmt(i.v):fmt(i.v)}</em><strong>${pct(i.v,tot)}</strong></div>`).join("");
+  return `<div class="pie-wrap"><svg viewBox="0 0 200 200" role="img" aria-label="Kreisdiagramm">${paths}<text x="100" y="97" text-anchor="middle" font-family="JetBrains Mono,monospace" font-weight="700" font-size="20" fill="var(--ink)">${center||fmt(tot)}</text><text x="100" y="116" text-anchor="middle" font-size="11" fill="var(--muted)">gesamt</text></svg><div class="legend">${leg}</div></div>`;
+}
+function wasteByType(list){ const m={}; list.forEach(w=>m[w.typeId]=(m[w.typeId]||0)+dur(w)); return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([id,v])=>({l:typeById(id)?.name||"?",v,c:typeColor(id)})); }
+function wasteByMuda(list){ const m={}; list.forEach(w=>{ const k=typeById(w.typeId)?.muda||"S"; m[k]=(m[k]||0)+dur(w); }); return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({l:MUDA[k].n,v,c:MUDA[k].c})); }
+
+/* ---------- Render ---------- */
+function renderTabs(){
+  $("#tabs").innerHTML=TABS.map(([k,l])=>`<button class="tab" role="tab" id="tab-${k}" aria-selected="${UI.tab===k}" data-act="tab" data-k="${k}">${l}</button>`).join("");
+}
+function render(){
+  renderTabs(); setStatus();
+  const v={auf:vAuf,spa:vSpa,gre:vGre,aus:vAus,pro:vPro,dat:vDat}[UI.tab];
+  $("#app").innerHTML=v();
+  if(UI.tab==="spa") bindSpa();
+  if(UI.tab==="gre") bindGre();
+}
+
+/* --- Aufnahme --- */
+function vAuf(){
+  if(!S.stations.length) return `<div class="empty">Keine Arbeitsplätze angelegt. Unter „Einrichtung & Export“ hinzufügen.</div>`;
+  const groups=[["VM","Vormontage"],["EM","Endmontage"]];
+  const anyRun=S.runs.some(r=>!r.end&&!isPaused(r)), anyPause=S.runs.some(r=>!r.end&&isPaused(r));
+  return `<div class="sec-h"><h2>Aufnahme</h2><div class="trow">${anyRun?`<button class="btn" data-act="pauseAll">⏸ Alle pausieren</button>`:""}${anyPause?`<button class="btn pri" data-act="resumeAll">▶ Alle fortsetzen</button>`:""}</div><p class="hint">Pause hält die Montagezeit an und beendet eine laufende Verschwendung. Pausenzeit zählt nirgends mit. Oben die Montagezeit pro Teil, unten die Verschwendung. Antippen einer Art startet die Zeit, erneutes Antippen stoppt sie. Ein Wechsel der Art beendet die laufende automatisch.</p></div>
+  <div class="grid-st">${groups.map(([k])=>S.stations.filter(s=>s.type===k).map(stCard).join("")).join("")}</div>`;
+}
+function stCard(s){
+  const r=runOf(s.id), w=wasteOf(s.id), st=stationStats(s.id), paused=isPaused(r), pz=paused?r.pauses[r.pauses.length-1]:null;
+  const prodOpts=`<option value="">Produkt wählen…</option>`+S.products.map(p=>`<option value="${p.id}" ${s.productId===p.id?"selected":""}>${esc(p.name)}</option>`).join("")+`<option value="__new">＋ Neues Produkt…</option>`;
+  const use=typeUsage(s.id), useAll=typeUsage();
+  const top=[...S.wasteTypes].sort((a,b)=>((use[b.id]||0)*100+(useAll[b.id]||0))-((use[a.id]||0)*100+(useAll[a.id]||0))).slice(0,6);
+  if(w&&!top.some(t=>t.id===w.typeId)) top.unshift(typeById(w.typeId));
+  const allOpts=`<option value="">Weitere Art…</option>`+S.wasteTypes.map(t=>`<option value="${t.id}">${esc(t.name)} (${MUDA[t.muda].n})</option>`).join("")+`<option value="__new">＋ Neue Verschwendungsart…</option>`;
+  const share=st.rsum?Math.min(100,st.winRuns/st.rsum*100):0;
+  return `<article class="st ${r&&!paused?"is-run":""} ${paused?"is-pause":""} ${w?"is-waste":""}" aria-label="${esc(s.name)}">
+    <header class="st-h"><span class="badge ${s.type}">${s.type==="VM"?"Vormontage":"Endmontage"}</span><h3>${esc(s.name)}</h3><span class="worker">${esc(s.worker||"kein Werker hinterlegt")}</span></header>
+    <section class="blk prod">
+      <div class="blk-l"><span>Montagezeit je Teil</span><span class="num">${st.done} Teile</span></div>
+      <div class="trow"><select id="prod-${s.id}" data-chg="prod" data-sid="${s.id}" aria-label="Produkt">${prodOpts}</select>
+        <span class="timer num" data-tick="${r&&!paused?now()-dur(r):""}">${r?fmt(dur(r)):"00:00"}</span></div>
+      ${paused?`<div class="pause-run"><span class="lbl">⏸ Pause</span><span class="timer num" data-tick="${pz.start}">${fmt(now()-pz.start)}</span></div>`:""}
+      <div class="trow">${!r?`<button class="btn pri" data-act="startRun" data-sid="${s.id}">▶ Zeit starten</button>`
+        :paused?`<button class="btn pri" data-act="resume" data-sid="${s.id}">▶ Fortsetzen</button><button class="btn" data-act="next" data-sid="${s.id}">Teil fertig</button><button class="btn" data-act="stopRun" data-sid="${s.id}">Stopp</button>`
+        :`<button class="btn pri" data-act="next" data-sid="${s.id}">Teil fertig ▸ nächstes</button><button class="btn" data-act="pause" data-sid="${s.id}" aria-label="Pause">⏸ Pause</button><button class="btn" data-act="stopRun" data-sid="${s.id}">Stopp</button>`}</div>
+      <div class="meta"><span>Ø <b class="num">${st.avg?fmt(st.avg):"–"}</b></span><span>Letztes <b class="num">${st.last?fmt(st.last):"–"}</b></span></div>
+    </section>
+    <section class="blk waste">
+      <div class="blk-l"><span>Verschwendung</span><span class="num">${st.n} Ereignisse</span></div>
+      ${w?`<div class="waste-run"><span class="lbl">${esc(typeById(w.typeId)?.name)}</span><span class="timer num" data-tick="${w.start}">${fmt(dur(w))}</span><button class="btn wst" data-act="stopWaste" data-sid="${s.id}">■ Stopp</button></div>`:""}
+      <div class="chips">${top.map(t=>`<button class="chip w" aria-pressed="${w&&w.typeId===t.id}" data-act="waste" data-sid="${s.id}" data-t="${t.id}">${esc(t.name)}</button>`).join("")}</div>
+      <select id="wsel-${s.id}" data-chg="waste" data-sid="${s.id}" aria-label="Verschwendungsart wählen">${allOpts}</select>
+    </section>
+    <footer class="st-f"><span>Σ Verschw. <b class="num" data-tick-sum="${s.id}">${fmt(st.wsum)}</b></span><span>Anteil an Montagezeit <b class="num">${st.rsum?de1(share)+" %":"–"}</b></span><span class="bar"><i style="width:${share}%"></i></span></footer>
+  </article>`;
+}
+
+/* --- Auswertung --- */
+function scopeChips(cur,act){
+  const opts=[["all","Alle Arbeitsplätze"],["VM","Vormontage"],["EM","Endmontage"],...S.stations.map(s=>[s.id,s.name])];
+  return `<div class="filters" role="group" aria-label="Filter">${opts.map(([k,l])=>`<button class="chip" aria-pressed="${cur===k}" data-act="${act}" data-k="${k}">${esc(l)}</button>`).join("")}</div>`;
+}
+function vAus(){
+  const sc=UI.scope;
+  const W=S.wastes.filter(w=>inScope(w.stationId,sc)), R=S.runs.filter(r=>inScope(r.stationId,sc));
+  const wsum=W.reduce((a,w)=>a+dur(w),0), rsum=R.reduce((a,r)=>a+dur(r),0);
+  const winR=W.reduce((a,w)=>a+R.reduce((b,r)=>b+(r.stationId===w.stationId?overlap(w,r):0),0),0);
+  const done=R.filter(r=>r.end);
+  const kp=`<div class="kpis">
+    <div class="kpi w"><span>Σ Verschwendung</span><b class="num">${fmt(wsum)}</b></div>
+    <div class="kpi"><span>Ereignisse</span><b class="num">${W.length}</b></div>
+    <div class="kpi"><span>Erfasste Montagezeit</span><b class="num">${fmt(rsum)}</b></div>
+    <div class="kpi w"><span>Verschw.-Anteil Montage</span><b class="num">${pct(winR,rsum)}</b></div>
+    <div class="kpi"><span>Fertige Teile</span><b class="num">${done.length}</b></div>
+    <div class="kpi"><span>Ø Verschw. je Teil</span><b class="num">${done.length?fmt(done.reduce((a,r)=>a+W.reduce((b,w)=>b+(w.stationId===r.stationId?overlap(w,r):0),0),0)/done.length):"–"}</b></div>
+  </div>`;
+  const vmW=S.wastes.filter(w=>stById(w.stationId)?.type==="VM"), emW=S.wastes.filter(w=>stById(w.stationId)?.type==="EM");
+  const cmp=(lbl,list)=>{ const runs=S.runs.filter(r=>stById(r.stationId)?.type===(lbl==="Vormontage"?"VM":"EM")); const rs=runs.reduce((a,r)=>a+dur(r),0); const wi=list.reduce((a,w)=>a+runs.reduce((b,r)=>b+(r.stationId===w.stationId?overlap(w,r):0),0),0);
+    return `<div class="panel"><h3>${lbl}</h3><div class="meta" style="margin-bottom:8px"><span>Σ <b class="num">${fmt(list.reduce((a,w)=>a+dur(w),0))}</b></span><span>Anteil an Montagezeit <b class="num">${pct(wi,rs)}</b></span><span>Teile <b class="num">${runs.filter(r=>r.end).length}</b></span></div>${pie(wasteByMuda(list))}<div class="mt">${pie(wasteByType(list))}</div></div>`; };
+  const per=S.stations.filter(s=>inScope(s.id,sc==="all"||sc==="VM"||sc==="EM"?sc:"all")).map(s=>{ const l=S.wastes.filter(w=>w.stationId===s.id); const st=stationStats(s.id);
+    return `<div class="panel"><h3><span class="badge ${s.type}">${s.type}</span>${esc(s.name)}<small class="hint" style="margin-left:auto">${esc(s.worker)}</small></h3><div class="meta" style="margin-bottom:6px"><span>Anteil <b class="num">${pct(st.winRuns,st.rsum)}</b></span><span>Ø Zyklus <b class="num">${st.avg?fmt(st.avg):"–"}</b></span></div>${pie(wasteByType(l))}</div>`; }).join("");
+  // Top-Tabelle
+  const byT={}; W.forEach(w=>{ const o=byT[w.typeId]||(byT[w.typeId]={n:0,s:0,st:new Set()}); o.n++; o.s+=dur(w); o.st.add(w.stationId); });
+  const topRows=Object.entries(byT).sort((a,b)=>b[1].s-a[1].s).map(([id,o])=>{ const t=typeById(id); return `<tr><td><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${typeColor(id)};margin-right:6px"></i>${esc(t?.name)}</td><td>${MUDA[t?.muda||"S"].n}</td><td class="r">${o.n}</td><td class="r">${fmt(o.s)}</td><td class="r">${fmt(o.s/o.n)}</td><td class="r">${pct(o.s,wsum)}</td><td>${[...o.st].map(x=>esc(stById(x)?.name)).join(", ")}</td></tr>`; }).join("");
+  // Produkte
+  const byP={}; done.forEach(r=>{ const k=r.productId+"|"+(stById(r.stationId)?.type||""); const o=byP[k]||(byP[k]={pid:r.productId,typ:stById(r.stationId)?.type,d:[],w:[]}); o.d.push(dur(r)); o.w.push(S.wastes.reduce((a,w)=>a+(w.stationId===r.stationId?overlap(w,r):0),0)); });
+  const prodRows=Object.values(byP).map(o=>{ const n=o.d.length, avg=o.d.reduce((a,b)=>a+b,0)/n, aw=o.w.reduce((a,b)=>a+b,0)/n;
+    return `<tr><td>${esc(prodById(o.pid)?.name||"–")}</td><td>${o.typ==="VM"?"Vormontage":"Endmontage"}</td><td class="r">${n}</td><td class="r">${fmt(avg)}</td><td class="r">${fmt(Math.min(...o.d))}</td><td class="r">${fmt(Math.max(...o.d))}</td><td class="r">${fmt(aw)}</td><td class="r">${fmt(avg-aw)}</td><td class="r">${pct(aw,avg)}</td></tr>`; }).join("");
+  return `<div class="sec-h"><h2>Auswertung</h2><div class="trow"><button class="btn" data-act="expP">PDF-Bericht</button><button class="btn" data-act="expX">Excel</button></div><p class="hint">Verschwendungsanteil = Verschwendung, die während einer laufenden Montagezeit lag, geteilt durch die erfasste Montagezeit.</p></div>
+  ${scopeChips(sc,"scope")}${kp}
+  <div class="cols"><div class="panel"><h3>Nach Verschwendungsart</h3>${pie(wasteByType(W))}</div><div class="panel"><h3>Nach Muda-Kategorie (7 Arten)</h3>${pie(wasteByMuda(W))}</div></div>
+  <h2 class="mt" style="font-size:22px">Vormontage und Endmontage im Vergleich</h2>
+  <div class="cols mt">${cmp("Vormontage",vmW)}${cmp("Endmontage",emW)}</div>
+  <h2 class="mt" style="font-size:22px">Je Arbeitsplatz</h2>
+  <div class="multi mt">${per||`<div class="empty">Keine Arbeitsplätze im Filter</div>`}</div>
+  <div class="panel mt"><h3>Verschwendungsarten im Detail</h3>${topRows?`<div class="tbl-w"><table><thead><tr><th>Art</th><th>Muda</th><th class="r">Anzahl</th><th class="r">Summe</th><th class="r">Ø Dauer</th><th class="r">Anteil</th><th>Arbeitsplätze</th></tr></thead><tbody>${topRows}</tbody></table></div>`:`<div class="empty">Noch keine Verschwendung erfasst</div>`}</div>
+  <div class="panel mt"><h3>Produkte und Zykluszeiten</h3>${prodRows?`<div class="tbl-w"><table><thead><tr><th>Produkt</th><th>Bereich</th><th class="r">Teile</th><th class="r">Ø Zyklus</th><th class="r">Min</th><th class="r">Max</th><th class="r">Ø Verschw.</th><th class="r">Ø ohne Verschw.</th><th class="r">Anteil</th></tr></thead><tbody>${prodRows}</tbody></table></div><p class="hint mt">„Ø ohne Verschw.“ zeigt die Zykluszeit, wenn die erfasste Verschwendung entfiele.</p>`:`<div class="empty">Noch keine abgeschlossenen Teile. Mit „Teil fertig“ in der Aufnahme wird ein Zyklus abgeschlossen.</div>`}</div>`;
+}
+
+/* --- Spaghetti --- */
+function spaStats(sid){
+  const sp=S.spa[sid]; if(!sp) return null;
+  let len=0,segs=0,longest=0; const pts=sp.pts;
+  for(let i=1;i<pts.length;i++){ if(pts[i].brk) continue; const d=Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y); len+=d; segs++; longest=Math.max(longest,d); }
+  const paths=pts.filter((p,i)=>i===0||p.brk).length;
+  const span=pts.length>1?pts[pts.length-1].t-pts[0].t:0;
+  const visits={}; pts.forEach(p=>{ let best=null,bd=1.0; sp.landmarks.forEach(l=>{ const d=Math.hypot(l.x-p.x,l.y-p.y); if(d<bd){bd=d;best=l;} }); if(best) visits[best.id]=(visits[best.id]||0)+1; });
+  const parts=S.runs.filter(r=>r.stationId===sid&&r.end).length;
+  return {len,segs,longest,paths,span,visits,parts,n:pts.length};
+}
+function vSpa(){
+  if(!S.stations.length) return `<div class="empty">Keine Arbeitsplätze</div>`;
+  if(!UI.spaSid||!stById(UI.spaSid)) UI.spaSid=S.stations[0].id;
+  const sid=UI.spaSid, sp=S.spa[sid], st=spaStats(sid);
+  const W=sp.w*100,H=sp.h*100, fs=Math.max(W,H)/38;
+  let grid=""; for(let x=100;x<W;x+=100) grid+=`<line x1="${x}" y1="0" x2="${x}" y2="${H}"/>`; for(let y=100;y<H;y+=100) grid+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}"/>`;
+  let lines="",dots=""; const pts=sp.pts;
+  for(let i=0;i<pts.length;i++){ const p=pts[i];
+    if(i>0&&!p.brk){ const q=pts[i-1]; lines+=`<line x1="${q.x*100}" y1="${q.y*100}" x2="${p.x*100}" y2="${p.y*100}" marker-end="url(#arr)"/>`; }
+    dots+=`<circle cx="${p.x*100}" cy="${p.y*100}" r="${fs*.32}" fill="${p.brk||i===0?"var(--accent)":"var(--waste)"}"/>`;
+  }
+  const lms=sp.landmarks.map(l=>`<g><rect x="${l.x*100-fs*.9}" y="${l.y*100-fs*.9}" width="${fs*1.8}" height="${fs*1.8}" rx="${fs*.25}" fill="var(--ink)" opacity=".85"/><text x="${l.x*100}" y="${l.y*100-fs*1.3}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="var(--ink)">${esc(l.name)}</text></g>`).join("");
+  const lastNum=pts.length?`<text x="${pts[pts.length-1].x*100+fs*.6}" y="${pts[pts.length-1].y*100+fs*.35}" font-size="${fs*.9}" fill="var(--waste)" font-weight="700">${pts.length}</text>`:"";
+  const vis=sp.landmarks.map(l=>({l:l.name,v:st.visits[l.id]||0,c:PAL[sp.landmarks.indexOf(l)%PAL.length],fmt:v=>v+"×"})).filter(x=>x.v);
+  const overview=S.stations.map(s=>{ const x=spaStats(s.id); return `<tr><td>${esc(s.name)}</td><td>${s.type==="VM"?"Vormontage":"Endmontage"}</td><td class="r">${de1(x.len)} m</td><td class="r">${x.n}</td><td class="r">${x.parts}</td><td class="r">${x.parts?de1(x.len/x.parts)+" m":"–"}</td><td class="r">${x.span>60000?de0(x.len/(x.span/3600000))+" m/h":"–"}</td></tr>`; }).join("");
+  return `<div class="sec-h"><h2>Spaghetti-Diagramm</h2><p class="hint">Jeden Ort antippen, an dem der Werker steht oder hingeht. Im Modus „Objekt“ legst du Fixpunkte wie Regal oder Werkbank an. „Neuer Weg“ trennt die Linie, ohne eine Strecke zu zählen.</p></div>
+  ${scopeChips(UI.spaSid,"spaSid").replace(/<button class="chip" aria-pressed="(true|false)" data-act="spaSid" data-k="(all|VM|EM)">[^<]*<\/button>/g,"")}
+  <div class="draw-cols">
+    <div class="panel">
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Modus"><button data-act="spaMode" data-k="weg" aria-pressed="${UI.spaMode==="weg"}">Weg</button><button data-act="spaMode" data-k="obj" aria-pressed="${UI.spaMode==="obj"}">Objekt</button></div>
+        <button class="btn sm" data-act="spaBreak">Neuer Weg</button>
+        <button class="btn sm" data-act="spaUndo" ${pts.length?"":"disabled"}>↶ Rückgängig</button>
+        <button class="btn sm dng" data-act="spaClear" data-confirm="Wirklich alle Punkte löschen?" ${pts.length?"":"disabled"}>Punkte löschen</button>
+        <span class="hint" style="margin-left:auto">Fläche <input type="number" id="spa-w" data-chg="spaW" min="2" max="60" step="1" value="${sp.w}" style="width:64px;min-height:34px"> × <input type="number" id="spa-h" data-chg="spaH" min="2" max="60" step="1" value="${sp.h}" style="width:64px;min-height:34px"> m</span>
+      </div>
+      <svg id="spa-svg" class="canvas" viewBox="${-fs} ${-fs*2} ${W+fs*2} ${H+fs*3}" role="img" aria-label="Laufwege ${esc(stById(sid).name)}">
+        <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--waste)"/></marker></defs>
+        <rect x="0" y="0" width="${W}" height="${H}" fill="var(--panel)" stroke="var(--line)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+        <g stroke="var(--line)" stroke-width="1" vector-effect="non-scaling-stroke">${grid}</g>
+        <text x="0" y="${-fs*.6}" font-size="${fs*.85}" fill="var(--muted)">Raster 1 m · ${esc(stById(sid).name)}</text>
+        <g stroke="var(--waste)" stroke-width="2.5" vector-effect="non-scaling-stroke" opacity=".85" fill="none">${lines}</g>
+        ${lms}${dots}${lastNum}
+      </svg>
+    </div>
+    <div class="panel">
+      <h3>Auswertung ${esc(stById(sid).name)}</h3>
+      <div class="stat-list">
+        <div><span>Gesamtlaufweg</span><b>${de1(st.len)} m</b></div>
+        <div><span>Erfasste Punkte</span><b>${st.n}</b></div>
+        <div><span>Wegabschnitte</span><b>${st.paths}</b></div>
+        <div><span>Längste Einzelstrecke</span><b>${de1(st.longest)} m</b></div>
+        <div><span>Fertige Teile</span><b>${st.parts}</b></div>
+        <div><span>Ø Laufweg je Teil</span><b>${st.parts?de1(st.len/st.parts)+" m":"–"}</b></div>
+        <div><span>Laufweg pro Stunde</span><b>${st.span>60000?de0(st.len/(st.span/3600000))+" m":"–"}</b></div>
+        <div><span>Hochgerechnet je Schicht (7 h)</span><b>${st.span>60000?de1(st.len/(st.span/3600000)*7/1000)+" km":"–"}</b></div>
+      </div>
+      <h3 class="mt">Anlaufpunkte</h3>
+      ${vis.length?pie(vis,{center:String(vis.reduce((a,b)=>a+b.v,0))}):`<div class="empty">Objekte anlegen, dann zählt die App, wie oft der Werker in ihrer Nähe (unter 1 m) war.</div>`}
+    </div>
+  </div>
+  <div class="panel mt"><h3>Alle Arbeitsplätze</h3><div class="tbl-w"><table><thead><tr><th>Arbeitsplatz</th><th>Bereich</th><th class="r">Laufweg</th><th class="r">Punkte</th><th class="r">Teile</th><th class="r">Weg je Teil</th><th class="r">Weg je Stunde</th></tr></thead><tbody>${overview}</tbody></table></div></div>`;
+}
+function svgPoint(svg,e){ const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
+function bindSpa(){
+  const svg=$("#spa-svg"); if(!svg) return;
+  svg.addEventListener("click",e=>{
+    const sp=S.spa[UI.spaSid]; const p=svgPoint(svg,e); const x=p.x/100,y=p.y/100;
+    if(x<0||y<0||x>sp.w||y>sp.h) return;
+    const rx=Math.round(x*100)/100, ry=Math.round(y*100)/100;
+    if(UI.spaMode==="obj"){
+      modal(`<h3>Objekt benennen</h3><label>Name<input type="text" name="n" id="m-ln" required maxlength="30" placeholder="z. B. Regal A, Schraubstation"></label>
+        <div class="modal-a"><button type="button" class="btn" data-cancel>Abbrechen</button><button class="btn pri">Setzen</button></div>`,
+        fd=>{ if(!fd.n.trim()) return false; sp.landmarks.push({id:uid(),name:fd.n.trim(),x:rx,y:ry}); commit(); });
+    } else {
+      sp.pts.push({x:rx,y:ry,t:now(),brk:!!UI.spaBrk}); UI.spaBrk=false; commit();
+    }
+  });
+}
+
+/* --- Greifraum --- */
+const GC={x:200,y:225}, GR={1:70,2:118,3:165};
+function gripFrom(x,y){
+  const dx=x-GC.x, dy=y-GC.y, r=Math.hypot(dx,dy);
+  const ang=Math.atan2(dx,-dy)*180/Math.PI;
+  const dir=Math.abs(ang)<=45?"V":(ang>45&&ang<=135)?"R":(ang<-45&&ang>=-135)?"L":"H";
+  const zone=r<=GR[1]?1:r<=GR[2]?2:r<=GR[3]?3:4;
+  return {zone,dir};
+}
+function gripRating(g){ if(g.dir==="H"||g.zone===4) return "r"; if(g.zone===1) return "g"; if(g.zone===2) return g.dir==="V"?"g":"y"; return g.dir==="V"?"y":"r"; }
+function sectorPath(r0,r1,d0,d1){
+  const P=(r,d)=>[GC.x+r*Math.sin(d*Math.PI/180),GC.y-r*Math.cos(d*Math.PI/180)];
+  const [a,b]=P(r1,d0),[c,d]=P(r1,d1),[e,f]=P(r0,d1),[g,h]=P(r0,d0);
+  return r0>0?`M${a} ${b}A${r1} ${r1} 0 0 1 ${c} ${d}L${e} ${f}A${r0} ${r0} 0 0 0 ${g} ${h}Z`:`M${GC.x} ${GC.y}L${a} ${b}A${r1} ${r1} 0 0 1 ${c} ${d}Z`;
+}
+function vGre(){
+  if(!S.stations.length) return `<div class="empty">Keine Arbeitsplätze</div>`;
+  if(!UI.greSid||!stById(UI.greSid)) UI.greSid=S.stations[0].id;
+  const sid=UI.greSid, G=S.grips.filter(g=>g.stationId===sid);
+  const cnt={}; G.forEach(g=>{ const k=g.zone+g.dir; cnt[k]=(cnt[k]||0)+1; }); const mx=Math.max(1,...Object.values(cnt));
+  const dirs={V:[-45,45],R:[45,135],H:[135,225],L:[225,315]};
+  const rings=[[0,GR[1],1],[GR[1],GR[2],2],[GR[2],GR[3],3],[GR[3],300,4]];
+  let heat="";
+  rings.forEach(([r0,r1,z])=>Object.entries(dirs).forEach(([k,[d0,d1]])=>{ const c=cnt[z+k]||0; heat+=`<path d="${sectorPath(r0,r1,d0,d1)}" fill="var(--waste)" fill-opacity="${c?0.12+0.6*c/mx:0}" stroke="none"/>`; if(c&&z<4){ const mid=(d0+d1)/2,rm=(r0+r1)/2+(r0===0?12:0); heat+=`<text x="${GC.x+rm*Math.sin(mid*Math.PI/180)}" y="${GC.y-rm*Math.cos(mid*Math.PI/180)+4}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">${c}</text>`; } }));
+  const z4=Object.keys(dirs).map(k=>cnt["4"+k]||0);
+  const lbl4=`<text x="12" y="410" font-size="11" fill="var(--muted)">Zone 4 · V ${z4[0]} · R ${z4[1]} · H ${z4[2]} · L ${z4[3]}</text>`;
+  const dotsG=G.slice(-60).map(g=>g.px?`<circle cx="${g.px}" cy="${g.py}" r="3" fill="var(--waste)" opacity=".55"/>`:"").join("");
+  const svg=`<svg id="gre-svg" class="canvas" viewBox="0 0 400 420" role="img" aria-label="Greifraum ${esc(stById(sid).name)}">
+    <defs><clipPath id="gclip"><rect x="0" y="0" width="400" height="420"/></clipPath></defs>
+    <rect x="0" y="0" width="400" height="420" fill="var(--panel)"/>
+    <rect x="30" y="18" width="340" height="130" rx="6" fill="var(--panel2)" stroke="var(--line)" stroke-width="1.5"/>
+    <text x="40" y="36" font-size="12" fill="var(--muted)" font-weight="600">WERKBANK · vor dem Werker</text>
+    <g clip-path="url(#gclip)">${heat}</g>
+    <g fill="none" stroke="var(--muted)" stroke-width="1.2">
+      <circle cx="${GC.x}" cy="${GC.y}" r="${GR[1]}"/><circle cx="${GC.x}" cy="${GC.y}" r="${GR[2]}" stroke-dasharray="5 4"/><circle cx="${GC.x}" cy="${GC.y}" r="${GR[3]}" stroke-dasharray="2 4"/>
+      ${[45,135,225,315].map(d=>`<line x1="${GC.x}" y1="${GC.y}" x2="${GC.x+300*Math.sin(d*Math.PI/180)}" y2="${GC.y-300*Math.cos(d*Math.PI/180)}" stroke-dasharray="3 5" opacity=".6"/>`).join("")}
+    </g>
+    <g font-size="10.5" fill="var(--muted)" font-weight="600"><text x="${GC.x+4}" y="${GC.y-GR[1]+12}">Z1</text><text x="${GC.x+4}" y="${GC.y-GR[2]+12}">Z2</text><text x="${GC.x+4}" y="${GC.y-GR[3]+12}">Z3</text><text x="${GC.x+4}" y="${GC.y-GR[3]-8}">Z4</text></g>
+    <g font-family="Barlow Condensed,Arial Narrow,sans-serif" font-size="15" font-weight="700" fill="var(--ink)"><text x="200" y="165" text-anchor="middle" opacity=".0">.</text><text x="384" y="${GC.y+5}" text-anchor="end">RECHTS</text><text x="16" y="${GC.y+5}">LINKS</text><text x="200" y="408" text-anchor="middle">HINTEN</text></g>
+    <ellipse cx="${GC.x}" cy="${GC.y+4}" rx="32" ry="14" fill="var(--ink)" opacity=".8"/><circle cx="${GC.x}" cy="${GC.y}" r="12" fill="var(--panel)" stroke="var(--ink)" stroke-width="2.5"/>
+    <path d="M${GC.x-5} ${GC.y-14} L${GC.x} ${GC.y-20} L${GC.x+5} ${GC.y-14}" fill="none" stroke="var(--ink)" stroke-width="2"/>
+    ${dotsG}${lbl4}
+  </svg>`;
+  const zoneItems=[1,2,3,4].map(z=>({l:ZONES[z],v:G.filter(g=>g.zone===z).length,c:ZONE_C[z],fmt:v=>v+"×"}));
+  const dirItems=Object.keys(DIRS).map(k=>({l:DIRS[k],v:G.filter(g=>g.dir===k).length,c:DIR_C[k],fmt:v=>v+"×"}));
+  const rate=r=>G.filter(g=>gripRating(g)===r).length;
+  const lights=n=>`<div class="lights"><div class="light g">Ergonomisch gut<b class="num">${pct(n.g,n.t)}</b></div><div class="light y">Bedingt<b class="num">${pct(n.y,n.t)}</b></div><div class="light r">Kritisch<b class="num">${pct(n.r,n.t)}</b></div></div>`;
+  const quick=`<div class="tbl-w"><table><thead><tr><th>Schnellerfassung</th>${Object.keys(DIRS).map(k=>`<th>${DIRS[k]}</th>`).join("")}</tr></thead><tbody>${[1,2,3,4].map(z=>`<tr><td>Zone ${z}</td>${Object.keys(DIRS).map(k=>`<td><button class="btn sm" data-act="grip" data-z="${z}" data-d="${k}">＋ ${cnt[z+k]||0}</button></td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  // Gesamtanalyse
+  const GS=S.grips.filter(g=>inScope(g.stationId,UI.greScope));
+  const allRows=S.stations.map(s=>{ const l=S.grips.filter(g=>g.stationId===s.id), n=l.length; const f=z=>l.filter(g=>g.zone===z).length; const fd=d=>l.filter(g=>g.dir===d).length; const red=l.filter(g=>gripRating(g)==="r").length;
+    return `<tr><td>${esc(s.name)}</td><td>${s.type}</td><td class="r">${n}</td>${[1,2,3,4].map(z=>`<td class="r">${pct(f(z),n)}</td>`).join("")}${Object.keys(DIRS).map(d=>`<td class="r">${pct(fd(d),n)}</td>`).join("")}<td class="r" style="color:var(--danger);font-weight:600">${pct(red,n)}</td></tr>`; }).join("");
+  const nAll={t:GS.length,g:GS.filter(g=>gripRating(g)==="g").length,y:GS.filter(g=>gripRating(g)==="y").length,r:GS.filter(g=>gripRating(g)==="r").length};
+  return `<div class="sec-h"><h2>Greifraumanalyse</h2><p class="hint">Draufsicht: Werker in der Mitte, Werkbank vorne. Tippe dorthin, wo der Werker hingreift. Die App ordnet Zone und Richtung automatisch zu. Alternativ die Schnellerfassung nutzen.</p></div>
+  ${scopeChips(UI.greSid,"greSid").replace(/<button class="chip" aria-pressed="(true|false)" data-act="greSid" data-k="(all|VM|EM)">[^<]*<\/button>/g,"")}
+  <div class="draw-cols">
+    <div class="panel"><div class="toolbar"><button class="btn sm" data-act="gripUndo" ${G.length?"":"disabled"}>↶ Rückgängig</button><button class="btn sm dng" data-act="gripClear" data-confirm="Wirklich alle Griffe dieses Platzes löschen?" ${G.length?"":"disabled"}>Griffe löschen</button><span class="hint" style="margin-left:auto">${G.length} Griffe erfasst</span></div>${svg}<div class="mt">${quick}</div></div>
+    <div class="panel"><h3>Auswertung ${esc(stById(sid).name)}</h3>${lights({t:G.length,g:rate("g"),y:rate("y"),r:rate("r")})}
+      <h3 class="mt">Zonen</h3>${pie(zoneItems,{center:String(G.length)})}
+      <h3 class="mt">Richtungen</h3>${pie(dirItems,{center:String(G.length)})}
+      <p class="hint mt">Gut: Zone 1, oder Zone 2 nach vorne. Bedingt: Zone 2 seitlich, Zone 3 nach vorne. Kritisch: Zone 3 seitlich, Zone 4 und jeder Griff nach hinten.</p></div>
+  </div>
+  <h2 class="mt" style="font-size:22px">Gesamtanalyse Greifzonen</h2>
+  <div class="filters mt">${[["all","Alle"],["VM","Vormontage"],["EM","Endmontage"]].map(([k,l])=>`<button class="chip" aria-pressed="${UI.greScope===k}" data-act="greScope" data-k="${k}">${l}</button>`).join("")}</div>
+  <div class="cols"><div class="panel"><h3>Zonen</h3>${pie([1,2,3,4].map(z=>({l:ZONES[z],v:GS.filter(g=>g.zone===z).length,c:ZONE_C[z],fmt:v=>v+"×"})),{center:String(GS.length)})}${lights(nAll)}</div>
+  <div class="panel"><h3>Richtungen</h3>${pie(Object.keys(DIRS).map(k=>({l:DIRS[k],v:GS.filter(g=>g.dir===k).length,c:DIR_C[k],fmt:v=>v+"×"})),{center:String(GS.length)})}</div></div>
+  <div class="panel mt"><h3>Je Arbeitsplatz</h3><div class="tbl-w"><table><thead><tr><th>Platz</th><th>Typ</th><th class="r">Griffe</th><th class="r">Z1</th><th class="r">Z2</th><th class="r">Z3</th><th class="r">Z4</th><th class="r">Vorne</th><th class="r">Links</th><th class="r">Rechts</th><th class="r">Hinten</th><th class="r">Kritisch</th></tr></thead><tbody>${allRows}</tbody></table></div></div>`;
+}
+function addGrip(zone,dir,px,py){ const r=runOf(UI.greSid); S.grips.push({id:uid(),stationId:UI.greSid,zone,dir,t:now(),runId:r?r.id:null,px:px?Math.round(px):null,py:py?Math.round(py):null}); commit(); }
+function bindGre(){
+  const svg=$("#gre-svg"); if(!svg) return;
+  svg.addEventListener("click",e=>{ const p=svgPoint(svg,e); const g=gripFrom(p.x,p.y); addGrip(g.zone,g.dir,p.x,p.y); toast(`${ZONES[g.zone].split(" · ")[0]} · ${DIRS[g.dir]}`); });
+}
+
+/* --- Protokoll --- */
+function vPro(){
+  const f=UI.proSid;
+  const rows=[
+    ...S.wastes.filter(w=>f==="all"||w.stationId===f).map(w=>({t:w.start,k:"w",o:w})),
+    ...S.runs.filter(r=>f==="all"||r.stationId===f).map(r=>({t:r.start,k:"r",o:r}))
+  ].sort((a,b)=>b.t-a.t);
+  const typeOpts=sel=>S.wasteTypes.map(t=>`<option value="${t.id}" ${t.id===sel?"selected":""}>${esc(t.name)}</option>`).join("");
+  const prodOpts=sel=>`<option value="">–</option>`+S.products.map(p=>`<option value="${p.id}" ${p.id===sel?"selected":""}>${esc(p.name)}</option>`).join("");
+  const body=rows.map(({k,o})=>{ const s=stById(o.stationId);
+    return `<tr><td class="num">${tod(o.start)}</td><td>${esc(s?.name)}</td><td>${k==="w"?`<span style="color:var(--waste);font-weight:600">Verschwendung</span>`:`<span style="color:var(--accent);font-weight:600">Montagezeit</span>`}</td>
+    <td>${k==="w"?`<select id="pw-${o.id}" data-chg="editType" data-id="${o.id}" aria-label="Art">${typeOpts(o.typeId)}</select>`:`<select id="pr-${o.id}" data-chg="editProd" data-id="${o.id}" aria-label="Produkt">${prodOpts(o.productId)}</select>`}</td>
+    <td class="r num">${o.end?fmt(dur(o)):(isPaused(o)?"pausiert":"läuft")}${k==="r"&&pausedMs(o)>999?`<br><small class="hint">+ ${fmt(pausedMs(o))} Pause</small>`:""}</td><td>${k==="w"?esc(o.runId?(prodById(S.runs.find(r=>r.id===o.runId)?.productId)?.name||"–"):"außerhalb Zyklus"):""}</td>
+    <td><button class="btn sm dng" data-act="${k==="w"?"delW":"delR"}" data-id="${o.id}" data-confirm="Löschen?" aria-label="Eintrag löschen">✕</button></td></tr>`; }).join("");
+  return `<div class="sec-h"><h2>Protokoll</h2><p class="hint">Alle Messungen, neueste zuerst. Falsch gewählte Arten oder Produkte lassen sich hier korrigieren.</p></div>
+  <div class="filters">${[["all","Alle"],...S.stations.map(s=>[s.id,s.name])].map(([k,l])=>`<button class="chip" aria-pressed="${f===k}" data-act="proSid" data-k="${k}">${esc(l)}</button>`).join("")}</div>
+  <div class="panel">${rows.length?`<div class="tbl-w"><table><thead><tr><th>Start</th><th>Platz</th><th>Typ</th><th>Art / Produkt</th><th class="r">Dauer</th><th>Im Zyklus von</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`:`<div class="empty">Noch keine Messungen</div>`}</div>
+  <p class="hint mt">Zusätzlich erfasst: ${S.grips.length} Griffe, ${Object.values(S.spa).reduce((a,s)=>a+s.pts.length,0)} Laufwegpunkte.</p>`;
+}
+
+/* --- Einrichtung & Export --- */
+function vDat(){
+  const use=typeUsage();
+  const st=S.stations.map(s=>`<div class="ed-row">
+    <input type="text" id="sn-${s.id}" data-chg="stName" data-id="${s.id}" value="${esc(s.name)}" aria-label="Name Arbeitsplatz" placeholder="Arbeitsplatz">
+    <input type="text" id="sw-${s.id}" data-chg="stWorker" data-id="${s.id}" value="${esc(s.worker)}" aria-label="Mitarbeiter" placeholder="Mitarbeiter">
+    <select id="sty-${s.id}" data-chg="stType" data-id="${s.id}" aria-label="Bereich"><option value="VM" ${s.type==="VM"?"selected":""}>Vormontage</option><option value="EM" ${s.type==="EM"?"selected":""}>Endmontage</option></select>
+    <button class="btn sm dng" data-act="delSt" data-id="${s.id}" data-confirm="Platz inkl. Daten löschen?">Entfernen</button></div>`).join("");
+  const ty=S.wasteTypes.map(t=>`<div class="ed-row t">
+    <input type="text" id="tn-${t.id}" data-chg="tName" data-id="${t.id}" value="${esc(t.name)}" aria-label="Bezeichnung">
+    <select id="tm-${t.id}" data-chg="tMuda" data-id="${t.id}" aria-label="Muda-Kategorie">${Object.entries(MUDA).map(([k,v])=>`<option value="${k}" ${t.muda===k?"selected":""}>${v.n}</option>`).join("")}</select>
+    <span class="cnt">${use[t.id]||0}×</span>
+    <button class="btn sm dng" data-act="delT" data-id="${t.id}" ${use[t.id]?"disabled title=\"Wird verwendet\"":""}>Entfernen</button></div>`).join("");
+  const pr=S.products.map(p=>`<div class="ed-row p"><input type="text" id="pn-${p.id}" data-chg="pName" data-id="${p.id}" value="${esc(p.name)}" aria-label="Produkt"><span class="cnt">${S.runs.filter(r=>r.productId===p.id).length}×</span>
+    <button class="btn sm dng" data-act="delP" data-id="${p.id}" ${S.runs.some(r=>r.productId===p.id)?"disabled":""}>Entfernen</button></div>`).join("");
+  return `<div class="sec-h"><h2>Einrichtung & Export</h2></div>
+  <div class="cols">
+    <div class="panel"><h3>Arbeitsplätze & Mitarbeiter</h3>${st}<div class="trow mt"><button class="btn" data-act="addSt" data-k="VM">＋ Vormontageplatz</button><button class="btn" data-act="addSt" data-k="EM">＋ Endmontageplatz</button></div></div>
+    <div class="panel"><h3>Export & Zurücksetzen</h3>
+      <p class="hint">Excel enthält alle Rohdaten (Verschwendung, Zyklen, Laufwege, Griffe) und die Auswertungstabellen mit echten Zeit- und Datumsformaten. Der PDF-Bericht fasst alle Auswertungen mit Diagrammen zusammen. Die JSON-Sicherung lässt sich später wieder einlesen.</p>
+      <div class="trow mt"><button class="btn pri" data-act="expX">Excel exportieren</button><button class="btn pri" data-act="expP">PDF-Bericht</button><button class="btn" data-act="expJ">JSON-Sicherung</button>
+      <label class="btn" for="imp">JSON einlesen<input type="file" id="imp" accept=".json,application/json" hidden></label></div>
+      <div class="trow mt"><button class="btn dng" data-act="resetData" data-confirm="Sicher? Messdaten werden gelöscht">Messdaten löschen</button><button class="btn dng" data-act="resetAll" data-confirm="Sicher? Alles wird gelöscht">Alles zurücksetzen</button></div>
+      <p class="hint mt">„Messdaten löschen“ behält Arbeitsplätze, Werker, Verschwendungsarten, Produkte und Spaghetti-Objekte. Vorher exportieren.</p>
+      <div class="trow mt"><button class="btn" data-act="demo">Beispieldaten laden</button><span class="hint">Zum Ausprobieren der Auswertung; ersetzt die aktuellen Messdaten.</span></div>
+    </div>
+  </div>
+  <div class="cols mt">
+    <div class="panel"><h3>Verschwendungsarten</h3>${ty}<div class="trow mt"><button class="btn" data-act="newT">＋ Neue Art</button></div></div>
+    <div class="panel"><h3>Produkte</h3>${pr||`<div class="empty">Produkte entstehen beim ersten Start einer Montagezeit.</div>`}<div class="trow mt"><button class="btn" data-act="newP">＋ Neues Produkt</button></div></div>
+  </div>`;
+}
+
+/* ---------- Export ---------- */
+async function offerFile(filename,data,fallbackText){
+  const type=filename.endsWith(".xlsx")?"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":filename.endsWith(".pdf")?"application/pdf":"application/json";
+  const blob=new Blob([data],{type});
+  try{
+    const file=new File([blob],filename,{type});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:filename}); toast("Datei übergeben"); return; }
+  }catch(e){ if(e&&e.name==="AbortError"){ toast("Abgebrochen"); return; } }
+  try{ const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),60000); toast("Download gestartet"); return; }catch(e){}
+  if(!fallbackText){ toast("Datei konnte nicht übergeben werden"); return; }
+  modal(`<h3>Download nicht möglich</h3><p class="hint">Kopiere die Sicherung und speichere sie als .json-Datei.</p><textarea id="m-copy" readonly>${esc(fallbackText||"")}</textarea>
+    <div class="modal-a"><button type="button" class="btn" data-cancel>Schließen</button><button class="btn pri">Kopieren</button></div>`,
+    ()=>{ const ta=$("#m-copy"); navigator.clipboard?.writeText(ta.value).then(()=>toast("Kopiert"),()=>{ta.select();}); return false; });
+}
+const stamp=()=>{ const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`; };
+function expJSON(){ const txt=JSON.stringify(S,null,1); offerFile(`muda-aufnahme_${stamp()}.json`,txt,txt); }
+/* ---------- Gemeinsame Auswertungsdaten für Export ---------- */
+const typName = id => stById(id)?.type==="VM"?"Vormontage":"Endmontage";
+const winRun = r => S.wastes.reduce((a,w)=>a+(w.stationId===r.stationId?overlap(w,r):0),0);
+function prodStats(filter){
+  const byP={};
+  S.runs.filter(r=>r.end&&filter(r)).forEach(r=>{ const k=r.productId+"|"+(stById(r.stationId)?.type||""); const o=byP[k]||(byP[k]={pid:r.productId,typ:stById(r.stationId)?.type,d:[],w:[]}); o.d.push(dur(r)); o.w.push(winRun(r)); });
+  return Object.values(byP).map(o=>{ const n=o.d.length, avg=o.d.reduce((a,b)=>a+b,0)/n, aw=o.w.reduce((a,b)=>a+b,0)/n;
+    return {name:prodById(o.pid)?.name||"ohne Produkt",bereich:o.typ==="VM"?"Vormontage":"Endmontage",n,avg,min:Math.min(...o.d),max:Math.max(...o.d),aw,net:avg-aw,share:avg?aw/avg:0}; });
+}
+function typeStats(list){
+  const tot=list.reduce((a,w)=>a+dur(w),0), m={};
+  list.forEach(w=>{ const o=m[w.typeId]||(m[w.typeId]={n:0,s:0,st:new Set()}); o.n++; o.s+=dur(w); o.st.add(w.stationId); });
+  return Object.entries(m).sort((a,b)=>b[1].s-a[1].s).map(([id,o])=>({id,name:typeById(id)?.name||"?",muda:MUDA[typeById(id)?.muda||"S"].n,n:o.n,s:o.s,avg:o.s/o.n,share:tot?o.s/tot:0,st:[...o.st].map(x=>stById(x)?.name).join(", ")}));
+}
+function gripStats(list){ const n=list.length; const f=fn=>list.filter(fn).length;
+  return {n,z:[1,2,3,4].map(z=>f(g=>g.zone===z)),d:Object.keys(DIRS).map(k=>f(g=>g.dir===k)),g:f(g=>gripRating(g)==="g"),y:f(g=>gripRating(g)==="y"),r:f(g=>gripRating(g)==="r")}; }
+function stRow(s){ const x=stationStats(s.id); const runs=S.runs.filter(r=>r.stationId===s.id); const sp=spaStats(s.id); const gs=gripStats(S.grips.filter(g=>g.stationId===s.id));
+  return {s,x,pause:runs.reduce((a,r)=>a+pausedMs(r),0),len:sp?sp.len:0,gs}; }
+function obsRange(){ const ts=[]; S.runs.forEach(r=>{ts.push(r.start); ts.push(r.end||now());}); S.wastes.forEach(w=>{ts.push(w.start); ts.push(w.end||now());}); S.grips.forEach(g=>ts.push(g.t)); Object.values(S.spa).forEach(sp=>sp.pts.forEach(p=>ts.push(p.t)));
+  return ts.length?[Math.min(...ts),Math.max(...ts)]:null; }
+
+/* ---------- Excel-Datei (eigener Writer, ohne Bibliothek) ---------- */
+const CRC_T=(()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=c&1?0xEDB88320^(c>>>1):c>>>1; t[n]=c>>>0; } return t; })();
+function crc32(b){ let c=0xFFFFFFFF; for(let i=0;i<b.length;i++) c=CRC_T[(c^b[i])&255]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function zipStore(files){
+  const enc=new TextEncoder(), parts=[], central=[]; let off=0;
+  const d=new Date(), dosT=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1), dosD=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  files.forEach(f=>{
+    const nm=enc.encode(f.name), data=typeof f.data==="string"?enc.encode(f.data):f.data, crc=crc32(data);
+    const h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x0800,true); h.setUint16(8,0,true); h.setUint16(10,dosT,true); h.setUint16(12,dosD,true);
+    h.setUint32(14,crc,true); h.setUint32(18,data.length,true); h.setUint32(22,data.length,true); h.setUint16(26,nm.length,true); h.setUint16(28,0,true);
+    parts.push(new Uint8Array(h.buffer),nm,data);
+    const c=new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true); c.setUint16(4,20,true); c.setUint16(6,20,true); c.setUint16(8,0x0800,true); c.setUint16(10,0,true); c.setUint16(12,dosT,true); c.setUint16(14,dosD,true);
+    c.setUint32(16,crc,true); c.setUint32(20,data.length,true); c.setUint32(24,data.length,true); c.setUint16(28,nm.length,true); c.setUint32(42,off,true);
+    central.push(new Uint8Array(c.buffer),nm);
+    off+=30+nm.length+data.length;
+  });
+  const cdSize=central.reduce((a,b)=>a+b.length,0), e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true); e.setUint16(8,files.length,true); e.setUint16(10,files.length,true); e.setUint32(12,cdSize,true); e.setUint32(16,off,true);
+  const all=[...parts,...central,new Uint8Array(e.buffer)], out=new Uint8Array(all.reduce((a,b)=>a+b.length,0)); let p=0; all.forEach(a=>{ out.set(a,p); p+=a.length; }); return out;
+}
+const xEsc=s=>String(s).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function colName(i){ let s=""; i++; while(i>0){ const m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=Math.floor((i-1)/26); } return s; }
+const XSTYLE={dt:2,dur:3,pct:4,n1:5,n0:6};
+function xlsxBuild(sheets){
+  const used=new Set();
+  sheets.forEach(sh=>{ let n=sh.name.replace(/[\[\]:*?\/\\]/g," ").slice(0,31), b=n, i=2; while(used.has(n.toLowerCase())){ n=(b.slice(0,28)+" "+i++); } used.add(n.toLowerCase()); sh.name=n; });
+  const sheetXml=sh=>{
+    const cols=sh.cols, last=colName(cols.length-1)+(sh.rows.length+1);
+    let rows=`<row r="1">`+cols.map((c,i)=>`<c r="${colName(i)}1" t="inlineStr" s="1"><is><t>${xEsc(c.h)}</t></is></c>`).join("")+`</row>`;
+    sh.rows.forEach((r,ri)=>{ const rn=ri+2;
+      rows+=`<row r="${rn}">`+cols.map((c,i)=>{ const v=r[i], ref=colName(i)+rn;
+        if(v===null||v===undefined||v==="") return "";
+        if(c.t==="s"||typeof v==="string") return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xEsc(v)}</t></is></c>`;
+        let num=+v; if(c.t==="dt") num=(v-new Date(v).getTimezoneOffset()*60000)/86400000+25569; else if(c.t==="dur") num=v/86400000;
+        if(!isFinite(num)) return "";
+        return `<c r="${ref}"${XSTYLE[c.t]?` s="${XSTYLE[c.t]}"`:""}><v>${num}</v></c>`; }).join("")+`</row>`; });
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><dimension ref="A1:${last}"/><sheetViews><sheetView workbookViewId="0"${sh.rows.length?"":` tabSelected="0"`}><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>${cols.map((c,i)=>`<col min="${i+1}" max="${i+1}" width="${c.w||14}" customWidth="1"/>`).join("")}</cols><sheetData>${rows}</sheetData>${sh.rows.length?`<autoFilter ref="A1:${last}"/>`:""}</worksheet>`;
+  };
+  const NS="http://schemas.openxmlformats.org";
+  const files=[
+    {name:"[Content_Types].xml",data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="${NS}/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>`},
+    {name:"_rels/.rels",data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="${NS}/package/2006/relationships"><Relationship Id="rId1" Type="${NS}/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
+    {name:"xl/workbook.xml",data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="${NS}/spreadsheetml/2006/main" xmlns:r="${NS}/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets>${sheets.map((s,i)=>`<sheet name="${xEsc(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join("")}</sheets><definedNames>${sheets.map((s,i)=>s.rows.length?`<definedName name="_xlnm._FilterDatabase" localSheetId="${i}" hidden="1">'${xEsc(s.name.replace(/'/g,"''"))}'!$A$1:$${colName(s.cols.length-1)}$${s.rows.length+1}</definedName>`:"").join("")}</definedNames></workbook>`},
+    {name:"xl/_rels/workbook.xml.rels",data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="${NS}/package/2006/relationships">${sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="${NS}/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join("")}<Relationship Id="rId${sheets.length+1}" Type="${NS}/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`},
+    {name:"xl/styles.xml",data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<styleSheet xmlns="${NS}/spreadsheetml/2006/main"><numFmts count="4"><numFmt numFmtId="164" formatCode="dd.mm.yyyy hh:mm:ss"/><numFmt numFmtId="165" formatCode="[h]:mm:ss"/><numFmt numFmtId="166" formatCode="0.0%"/><numFmt numFmtId="167" formatCode="0.0"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/><family val="2"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF0B6E66"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="7"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="167" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Standard" xfId="0" builtinId="0"/></cellStyles></styleSheet>`},
+    ...sheets.map((s,i)=>({name:`xl/worksheets/sheet${i+1}.xml`,data:sheetXml(s)}))
+  ];
+  return zipStore(files);
+}
+function buildXlsx(){
+  const S_=(h,w)=>({h,w,t:"s"}), D=(h,w=12)=>({h,w,t:"dur"}), T=(h,w=19)=>({h,w,t:"dt"}), N=(h,w=10)=>({h,w,t:"n0"}), N1=(h,w=11)=>({h,w,t:"n1"}), PC=(h,w=12)=>({h,w,t:"pct"});
+  const sh=[];
+  sh.push({name:"Übersicht",cols:[S_("Arbeitsplatz",16),S_("Mitarbeiter",18),S_("Bereich",13),N("Fertige Teile",12),D("Ø Zykluszeit",13),D("Σ Montagezeit",14),D("Σ Pause"),D("Σ Verschwendung",16),D("Verschw. in Montagezeit",21),PC("Verschwendungsanteil",19),N("Ereignisse",11),N1("Laufweg [m]",12),N("Griffe"),PC("Kritische Griffe",15)],
+    rows:S.stations.map(s=>{ const o=stRow(s); return [s.name,s.worker,typName(s.id),o.x.done,o.x.avg||null,o.x.rsum,o.pause,o.x.wsum,o.x.winRuns,o.x.rsum?o.x.winRuns/o.x.rsum:null,o.x.n,Math.round(o.len*10)/10,o.gs.n,o.gs.n?o.gs.r/o.gs.n:null]; })});
+  sh.push({name:"Verschwendung",cols:[S_("Arbeitsplatz",16),S_("Mitarbeiter",18),S_("Bereich",13),S_("Verschwendungsart",26),S_("Muda-Kategorie",19),T("Start"),T("Ende"),D("Dauer",11),S_("Produkt",22),S_("Im Zyklus",10)],
+    rows:[...S.wastes].sort((a,b)=>a.start-b.start).map(w=>{ const t=typeById(w.typeId), r=S.runs.find(x=>x.stationId===w.stationId&&overlap(w,x)>0); return [stById(w.stationId)?.name,stById(w.stationId)?.worker,typName(w.stationId),t?.name,MUDA[t?.muda||"S"].n,w.start,w.end,dur(w),r?prodById(r.productId)?.name:"",r?"ja":"nein"]; })});
+  sh.push({name:"Zyklen",cols:[S_("Arbeitsplatz",16),S_("Bereich",13),S_("Produkt",22),T("Start"),T("Ende"),D("Zykluszeit ohne Pause",20),D("Pause",10),D("Verschwendung im Zyklus",22),D("Zeit ohne Verschwendung",22),PC("Verschwendungsanteil",19),S_("Status",13)],
+    rows:[...S.runs].sort((a,b)=>a.start-b.start).map(r=>{ const ws=winRun(r), d=dur(r); return [stById(r.stationId)?.name,typName(r.stationId),prodById(r.productId)?.name||"",r.start,r.end,d,pausedMs(r),ws,d-ws,d?ws/d:null,r.end?"abgeschlossen":isPaused(r)?"pausiert":"läuft"]; })});
+  const types=typeStats(S.wastes);
+  sh.push({name:"Verschwendungsarten",cols:[S_("Verschwendungsart",26),S_("Muda-Kategorie",19),N("Anzahl"),...S.stations.map(s=>D(s.name,12)),D("Vormontage",13),D("Endmontage",13),D("Gesamt",12),D("Ø Dauer",11),PC("Anteil",10)],
+    rows:types.map(t=>{ const sum=st=>S.wastes.filter(w=>w.typeId===t.id&&st(w)).reduce((a,w)=>a+dur(w),0);
+      return [t.name,t.muda,t.n,...S.stations.map(s=>sum(w=>w.stationId===s.id)),sum(w=>stById(w.stationId)?.type==="VM"),sum(w=>stById(w.stationId)?.type==="EM"),t.s,t.avg,t.share]; })});
+  const tot=S.wastes.reduce((a,w)=>a+dur(w),0);
+  sh.push({name:"Muda-Kategorien",cols:[S_("Muda-Kategorie",22),N("Anzahl"),D("Summe",12),D("Vormontage",13),D("Endmontage",13),PC("Anteil",10)],
+    rows:Object.entries(MUDA).map(([k,v])=>{ const l=S.wastes.filter(w=>(typeById(w.typeId)?.muda||"S")===k), s=l.reduce((a,w)=>a+dur(w),0), by=t=>l.filter(w=>stById(w.stationId)?.type===t).reduce((a,w)=>a+dur(w),0);
+      return [v.n,l.length,s,by("VM"),by("EM"),tot?s/tot:0]; }).filter(r=>r[1])});
+  sh.push({name:"Produkte",cols:[S_("Produkt",24),S_("Bereich",13),N("Teile"),D("Ø Zyklus"),D("Min",10),D("Max",10),D("Ø Verschwendung",16),D("Ø ohne Verschwendung",20),PC("Anteil",10)],
+    rows:prodStats(()=>true).map(p=>[p.name,p.bereich,p.n,p.avg,p.min,p.max,p.aw,p.net,p.share])});
+  sh.push({name:"Spaghetti",cols:[S_("Arbeitsplatz",16),S_("Bereich",13),S_("Fläche [m]",11),N1("Laufweg [m]",12),N("Punkte"),N("Wegabschnitte",14),N1("Längste Strecke [m]",18),N("Fertige Teile",12),N1("Weg je Teil [m]",15),N("Weg je Stunde [m]",17),S_("Anlaufpunkte",40)],
+    rows:S.stations.map(s=>{ const sp=S.spa[s.id], x=spaStats(s.id); return [s.name,typName(s.id),`${sp.w} × ${sp.h}`,Math.round(x.len*10)/10,x.n,x.paths,Math.round(x.longest*10)/10,x.parts,x.parts?Math.round(x.len/x.parts*10)/10:null,x.span>60000?Math.round(x.len/(x.span/3600000)):null,sp.landmarks.map(l=>`${l.name} (${x.visits[l.id]||0}×)`).join(", ")]; })});
+  const spRows=[]; S.stations.forEach(s=>{ const sp=S.spa[s.id]; sp.pts.forEach((p,i)=>{ const q=sp.pts[i-1]; spRows.push([s.name,i+1,p.x,p.y,p.t,p.brk||i===0?"ja":"",q&&!p.brk?Math.round(Math.hypot(p.x-q.x,p.y-q.y)*100)/100:0]); }); });
+  sh.push({name:"Laufwege Punkte",cols:[S_("Arbeitsplatz",16),N("Nr",6),{h:"x [m]",w:8,t:"n"},{h:"y [m]",w:8,t:"n"},T("Zeit"),S_("Neuer Abschnitt",15),{h:"Strecke [m]",w:11,t:"n"}],rows:spRows});
+  sh.push({name:"Greifraum",cols:[S_("Arbeitsplatz",16),S_("Bereich",13),N("Griffe"),PC("Zone 1",9),PC("Zone 2",9),PC("Zone 3",9),PC("Zone 4",9),PC("Vorne",9),PC("Links",9),PC("Rechts",9),PC("Hinten",9),PC("Gut",9),PC("Bedingt",9),PC("Kritisch",9)],
+    rows:S.stations.map(s=>{ const g=gripStats(S.grips.filter(x=>x.stationId===s.id)), q=v=>g.n?v/g.n:null; return [s.name,typName(s.id),g.n,...g.z.map(q),...g.d.map(q),q(g.g),q(g.y),q(g.r)]; })});
+  sh.push({name:"Griffe",cols:[S_("Arbeitsplatz",16),S_("Bereich",13),N("Zone",7),S_("Zonenbeschreibung",32),S_("Richtung",10),S_("Bewertung",11),T("Zeit")],
+    rows:[...S.grips].sort((a,b)=>a.t-b.t).map(g=>[stById(g.stationId)?.name,typName(g.stationId),g.zone,ZONES[g.zone],DIRS[g.dir],{g:"gut",y:"bedingt",r:"kritisch"}[gripRating(g)],g.t])});
+  return xlsxBuild(sh);
+}
+
+/* ---------- PDF-Bericht (eigener Writer, ohne Bibliothek) ---------- */
+const HW_R=[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+const HW_B=[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584];
+const CP_MAP={8364:128,8218:130,8222:132,8230:133,8211:150,8212:151,8216:145,8217:146,8220:147,8221:148,8226:149};
+function pdfChars(s){ const out=[]; for(const ch of String(s??"")){ const c=ch.codePointAt(0);
+  if(ch==="Σ"){ out.push(..."Summe".split("").map(x=>x.charCodeAt(0))); continue; }
+  if(c===8594){ out.push(45,62); continue; }
+  if(c<128&&c>=32) out.push(c); else if(c>=160&&c<256) out.push(c); else if(CP_MAP[c]) out.push(CP_MAP[c]); else if(c===10||c===9) out.push(32); }
+  return out; }
+const BASE={196:65,214:79,220:85,228:97,246:111,252:117,223:115,215:120,216:79,248:111,233:101,232:101,201:69};
+function tw(s,size,bold){ const t=bold?HW_B:HW_R; let w=0; pdfChars(s).forEach(c=>{ const b=BASE[c]||c; w+=(b>=32&&b<=126)?t[b-32]:(c===223?611:556); }); return w*size/1000; }
+function fitTxt(s,max,size,bold){ s=String(s??""); if(tw(s,size,bold)<=max) return s; while(s.length>1&&tw(s+"…",size,bold)>max) s=s.slice(0,-1); return s+"…"; }
+function pdfLit(s){ return pdfChars(s).map(c=>c===40||c===41||c===92?"\\"+String.fromCharCode(c):String.fromCharCode(c)).join(""); }
+function makePDF(){
+  const W=595.28,H=841.89, pages=[]; let ops=null;
+  const f2=n=>(Math.round(n*100)/100).toString();
+  const rgb=(hex,fill=true)=>{ const n=parseInt(hex.slice(1),16); return `${f2(((n>>16)&255)/255)} ${f2(((n>>8)&255)/255)} ${f2((n&255)/255)} ${fill?"rg":"RG"}`; };
+  const P={W,H,pages,
+    page(){ ops=[]; pages.push(ops); },
+    use(i){ ops=pages[i]; },
+    text(x,y,s,o={}){ const size=o.size||9, bold=!!o.bold; s=o.max?fitTxt(s,o.max,size,bold):String(s??""); const w=tw(s,size,bold); const xx=o.align==="right"?x-w:o.align==="center"?x-w/2:x;
+      ops.push(`BT ${rgb(o.color||"#18201D")} /${bold?"F2":"F1"} ${size} Tf ${f2(xx)} ${f2(H-y)} Td (${pdfLit(s)}) Tj ET`); return w; },
+    rect(x,y,w,h,o={}){ let s=""; if(o.fill) s+=rgb(o.fill)+" "; if(o.stroke) s+=rgb(o.stroke,false)+` ${o.lw||0.5} w `; ops.push(s+`${f2(x)} ${f2(H-y-h)} ${f2(w)} ${f2(h)} re ${o.fill&&o.stroke?"B":o.fill?"f":"S"}`); },
+    line(x1,y1,x2,y2,o={}){ ops.push(`${rgb(o.color||"#C9D0CC",false)} ${o.lw||0.5} w ${o.dash?"[2 2] 0 d ":""}${f2(x1)} ${f2(H-y1)} m ${f2(x2)} ${f2(H-y2)} l S${o.dash?" [] 0 d":""}`); },
+    path(pts,o={}){ if(pts.length<2) return; ops.push(`${rgb(o.color||"#C25F16",false)} ${o.lw||1} w 1 J 1 j `+pts.map((p,i)=>`${f2(p[0])} ${f2(H-p[1])} ${i?"l":"m"}`).join(" ")+" S"); },
+    slice(cx,cy,r1,r0,a0,a1,color){
+      const arc=(r,a,b)=>{ const n=Math.max(1,Math.ceil(Math.abs(b-a)/90)), st=(b-a)/n, seg=[];
+        for(let i=0;i<n;i++){ const t0=(a+i*st)*Math.PI/180, t1=(a+(i+1)*st)*Math.PI/180, k=4/3*Math.tan((t1-t0)/4);
+          const p0=[cx+r*Math.sin(t0),cy-r*Math.cos(t0)], p3=[cx+r*Math.sin(t1),cy-r*Math.cos(t1)];
+          seg.push([p0,[p0[0]+k*r*Math.cos(t0),p0[1]+k*r*Math.sin(t0)],[p3[0]-k*r*Math.cos(t1),p3[1]-k*r*Math.sin(t1)],p3]); }
+        return seg; };
+      const pt=p=>`${f2(p[0])} ${f2(H-p[1])}`;
+      const o=arc(r1,a0,a1); let s=`${rgb(color)} ${pt(o[0][0])} m `+o.map(g=>`${pt(g[1])} ${pt(g[2])} ${pt(g[3])} c`).join(" ");
+      if(r0>0){ const i=arc(r0,a1,a0); s+=` ${pt(i[0][0])} l `+i.map(g=>`${pt(g[1])} ${pt(g[2])} ${pt(g[3])} c`).join(" "); } else s+=` ${f2(cx)} ${f2(H-cy)} l`;
+      ops.push(s+" h f"); },
+    bytes(){
+      const objs=[]; const add=s=>{ objs.push(s); return objs.length; };
+      add("<< /Type /Catalog /Pages 2 0 R >>"); add("PAGES");
+      add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+      add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+      const kids=[];
+      pages.forEach(p=>{ const content=p.join("\n"); const c=add(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+        kids.push(add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${c} 0 R >>`)); });
+      objs[1]=`<< /Type /Pages /Kids [${kids.map(k=>k+" 0 R").join(" ")}] /Count ${kids.length} >>`;
+      let out="%PDF-1.4\n%\xE2\xE3\xCF\xD3\n"; const offs=[];
+      objs.forEach((o,i)=>{ offs.push(out.length); out+=`${i+1} 0 obj\n${o}\nendobj\n`; });
+      const x=out.length;
+      out+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`+offs.map(o=>String(o).padStart(10,"0")+" 00000 n \n").join("");
+      out+=`trailer\n<< /Size ${objs.length+1} /Root 1 0 R /Info << /Title (Muda-Aufnahme Bericht) /Producer (Muda-Aufnahme) >> >>\nstartxref\n${x}\n%%EOF`;
+      const b=new Uint8Array(out.length); for(let i=0;i<out.length;i++) b[i]=out.charCodeAt(i)&255; return b; }
+  };
+  return P;
+}
+function buildPdf(){
+  const P=makePDF(), W=P.W, H=P.H, M=40, CW=W-2*M; let y=0;
+  const INK="#18201D", MUT="#5D6762", ACC="#0B6E66", WST="#C25F16", LINE="#D2D8D4";
+  const newPage=()=>{ P.page(); y=M+8; };
+  const ensure=h=>{ if(y+h>H-48) newPage(); };
+  const wrap=(s,size,max)=>{ const out=[]; let cur=""; String(s).split(" ").forEach(wd=>{ const t=cur?cur+" "+wd:wd; if(tw(t,size)>max&&cur){ out.push(cur); cur=wd; } else cur=t; }); if(cur) out.push(cur); return out; };
+  const h2=(s,sub)=>{ ensure(60); y+=6; P.text(M,y+14,s,{size:14,bold:true,color:INK}); P.line(M,y+20,W-M,y+20,{color:ACC,lw:1.2}); y+=28; if(sub){ wrap(sub,8.5,CW).forEach(l=>{ P.text(M,y+8,l,{size:8.5,color:MUT}); y+=11; }); y+=5; } };
+  const pctS=v=>v===null||!isFinite(v)?"–":de1(v*100)+" %";
+  const table=(cols,rows)=>{ const tw_=cols.reduce((a,c)=>a+c.w,0), rh=14;
+    const head=()=>{ P.rect(M,y,tw_,rh+3,{fill:"#E3ECEA"}); let x=M; cols.forEach(c=>{ P.text(c.r?x+c.w-4:x+4,y+11,c.h,{size:7.2,bold:true,color:"#3D4743",align:c.r?"right":"left",max:c.w-6}); x+=c.w; }); y+=rh+3; };
+    if(!rows.length){ ensure(24); P.text(M,y+10,"Keine Daten erfasst.",{size:8.5,color:MUT}); y+=22; return; }
+    ensure(rh*3+4); head();
+    rows.forEach((r,ri)=>{ if(y+rh>H-48){ newPage(); head(); } if(ri%2) P.rect(M,y,tw_,rh,{fill:"#F4F6F5"}); let x=M;
+      cols.forEach((c,i)=>{ const v=r[i]; if(c.sw&&v){ P.rect(x+4,y+4,7,7,{fill:v}); } else P.text(c.r?x+c.w-4:x+4,y+10,v??"",{size:7.8,align:c.r?"right":"left",max:c.w-6,bold:!!c.b}); x+=c.w; });
+      y+=rh; });
+    P.line(M,y,M+tw_,y,{color:LINE}); y+=12; };
+  const donut=(x,cy,R,items,center,legX,legW)=>{ // gibt Höhe zurück
+    const tot=items.reduce((a,b)=>a+b.v,0); if(!tot){ P.text(x,cy,"Keine Daten",{size:8.5,color:MUT,align:"center"}); return 30; }
+    let a=0; items.forEach(it=>{ if(!it.v) return; const sp=it.v/tot*360; if(sp>=359.9){ P.slice(x,cy,R,R*.58,0,180,it.c); P.slice(x,cy,R,R*.58,180,360,it.c); } else P.slice(x,cy,R,R*.58,a,a+sp,it.c); a+=sp; });
+    P.text(x,cy+3,center,{size:R>40?11:9,bold:true,align:"center"}); P.text(x,cy+13,"gesamt",{size:6.5,color:MUT,align:"center"});
+    let ly=cy-R+4; const lines=items.filter(i=>i.v);
+    lines.forEach(it=>{ P.rect(legX,ly-6.5,7,7,{fill:it.c}); P.text(legX+11,ly,it.l,{size:7.5,max:legW-86}); P.text(legX+legW-38,ly,it.f?it.f(it.v):fmt(it.v),{size:7.5,color:MUT,align:"right"}); P.text(legX+legW,ly,pctS(it.v/tot),{size:7.5,bold:true,align:"right"}); ly+=11; });
+    return Math.max(R*2+8,lines.length*11+8); };
+  const topN=(items,n)=>{ if(items.length<=n) return items; const rest=items.slice(n-1).reduce((a,b)=>a+b.v,0); return [...items.slice(0,n-1),{l:"Weitere Arten",v:rest,c:"#A9B2AE"}]; };
+  const kpis=list=>{ const bw=(CW-(list.length-1)*8)/list.length; ensure(48); list.forEach(([l,v,w],i)=>{ const x=M+i*(bw+8); P.rect(x,y,bw,40,{stroke:LINE,fill:"#FFFFFF"}); P.text(x+8,y+13,l.toUpperCase(),{size:6.5,bold:true,color:MUT,max:bw-12}); P.text(x+8,y+31,v,{size:13,bold:true,color:w?WST:INK,max:bw-12}); }); y+=52; };
+
+  // --- Seite 1: Kopf ---
+  P.page(); P.rect(0,0,W,78,{fill:ACC});
+  P.text(M,36,"Muda-Aufnahme Montage",{size:20,bold:true,color:"#FFFFFF"});
+  const rg=obsRange(), d=new Date();
+  P.text(M,56,`Verschwendungsanalyse · Bericht vom ${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`,{size:9.5,color:"#DDEFEC"});
+  if(rg) P.text(W-M,56,`Beobachtung ${dts(rg[0]).slice(0,16)} bis ${tod(rg[1]).slice(0,5)}`,{size:9.5,color:"#DDEFEC",align:"right"});
+  y=98;
+  const W_=S.wastes, R_=S.runs, wsum=W_.reduce((a,w)=>a+dur(w),0), rsum=R_.reduce((a,r)=>a+dur(r),0), winR=R_.reduce((a,r)=>a+winRun(r),0), done=R_.filter(r=>r.end);
+  kpis([["Verschwendung",fmt(wsum),1],["Erfasste Montagezeit",fmt(rsum)],["Verschwendungsanteil",pctS(rsum?winR/rsum:null),1],["Fertige Teile",String(done.length)],["Ereignisse",String(W_.length)]]);
+  h2("Arbeitsplätze");
+  table([{h:"Arbeitsplatz",w:58,b:1},{h:"Mitarbeiter",w:84},{h:"Bereich",w:60},{h:"Teile",w:32,r:1},{h:"Ø Zyklus",w:46,r:1},{h:"Montage",w:52,r:1},{h:"Pause",w:44,r:1},{h:"Verschw.",w:52,r:1},{h:"Anteil",w:42,r:1},{h:"Laufweg",w:45.3,r:1}],
+    S.stations.map(s=>{ const o=stRow(s); return [s.name,s.worker||"–",typName(s.id),String(o.x.done),o.x.avg?fmt(o.x.avg):"–",fmt(o.x.rsum),fmt(o.pause),fmt(o.x.wsum),pctS(o.x.rsum?o.x.winRuns/o.x.rsum:null),de0(o.len)+" m"]; }));
+  // Verteilung gesamt
+  h2("Verteilung der Verschwendung – alle Arbeitsplätze","Links nach den 7 Muda-Kategorien, rechts nach erfassten Verschwendungsarten. Zeiten in mm:ss.");
+  const half=(CW-16)/2;
+  const twoDonuts=(a,b,ta,tb,cf=fmt)=>{ const hA=Math.max(110,a.filter(i=>i.v).length*11+12), hB=Math.max(110,b.filter(i=>i.v).length*11+12); ensure(Math.max(hA,hB)+26);
+    P.text(M,y+8,ta,{size:9,bold:true}); P.text(M+half+16,y+8,tb,{size:9,bold:true}); y+=16;
+    const cy=y+48; const h1=donut(M+46,cy,44,a,cf(a.reduce((s,i)=>s+i.v,0)),M+100,half-100); const h2_=donut(M+half+16+46,cy,44,b,cf(b.reduce((s,i)=>s+i.v,0)),M+half+116,half-100);
+    y+=Math.max(h1,h2_)+12; };
+  twoDonuts(wasteByMuda(W_),topN(wasteByType(W_),10),"Nach Muda-Kategorie","Nach Verschwendungsart");
+  // VM vs EM
+  h2("Vormontage und Endmontage im Vergleich");
+  const area=t=>{ const ws=W_.filter(w=>stById(w.stationId)?.type===t), rs=R_.filter(r=>stById(r.stationId)?.type===t); const rsu=rs.reduce((a,r)=>a+dur(r),0), wi=rs.reduce((a,r)=>a+winRun(r),0);
+    return {ws,txt:`Summe ${fmt(ws.reduce((a,w)=>a+dur(w),0))} · Anteil ${pctS(rsu?wi/rsu:null)} · ${rs.filter(r=>r.end).length} Teile`}; };
+  const vm=area("VM"), em=area("EM");
+  ensure(30); P.text(M,y+8,"Vormontage",{size:10,bold:true,color:"#3D6FB6"}); P.text(M,y+20,vm.txt,{size:8,color:MUT,max:half}); P.text(M+half+16,y+8,"Endmontage",{size:10,bold:true,color:ACC}); P.text(M+half+16,y+20,em.txt,{size:8,color:MUT,max:half}); y+=28;
+  twoDonuts(wasteByMuda(vm.ws),wasteByMuda(em.ws),"Vormontage nach Muda","Endmontage nach Muda");
+  twoDonuts(topN(wasteByType(vm.ws),8),topN(wasteByType(em.ws),8),"Vormontage nach Art","Endmontage nach Art");
+  // Je Arbeitsplatz
+  h2("Je Arbeitsplatz");
+  let col=0, rowH=0;
+  S.stations.forEach(s=>{ const items=topN(wasteByType(S.wastes.filter(w=>w.stationId===s.id)),7), o=stRow(s); const bh=Math.max(96,items.filter(i=>i.v).length*11+40);
+    if(col===0) ensure(bh+8); else if(y+bh>H-48){ y+=rowH; col=0; rowH=0; ensure(bh+8); }
+    const x=M+col*(half+16);
+    P.rect(x,y,half,bh,{stroke:LINE}); P.text(x+8,y+14,s.name,{size:10,bold:true}); P.text(x+8+tw(s.name,10,true)+6,y+14,`${typName(s.id)}${s.worker?" · "+s.worker:""}`,{size:8,color:MUT,max:half-tw(s.name,10,true)-24});
+    P.text(x+8,y+26,`Anteil ${pctS(o.x.rsum?o.x.winRuns/o.x.rsum:null)} · Ø Zyklus ${o.x.avg?fmt(o.x.avg):"–"} · ${o.x.done} Teile`,{size:7.5,color:MUT,max:half-16});
+    const yy=y; y=yy; donut(x+40,yy+34+30,30,items,fmt(items.reduce((a,b)=>a+b.v,0)),x+80,half-88); y=yy;
+    rowH=Math.max(rowH,bh+10); col++; if(col===2){ y+=rowH; col=0; rowH=0; } });
+  if(col) y+=rowH; y+=4;
+  // Arten im Detail
+  h2("Verschwendungsarten im Detail");
+  table([{h:"",w:14,sw:1},{h:"Art",w:126,b:1},{h:"Muda",w:82},{h:"Anzahl",w:40,r:1},{h:"Summe",w:48,r:1},{h:"Ø Dauer",w:46,r:1},{h:"Anteil",w:42,r:1},{h:"Arbeitsplätze",w:117.3}],
+    typeStats(W_).map(t=>[typeColor(t.id),t.name,t.muda,String(t.n),fmt(t.s),fmt(t.avg),pctS(t.share),t.st]));
+  h2("Produkte und Zykluszeiten","„Ø ohne Verschw.“ = Zykluszeit, wenn die im Zyklus erfasste Verschwendung entfiele. Pausen sind herausgerechnet.");
+  table([{h:"Produkt",w:120,b:1},{h:"Bereich",w:64},{h:"Teile",w:34,r:1},{h:"Ø Zyklus",w:50,r:1},{h:"Min",w:44,r:1},{h:"Max",w:44,r:1},{h:"Ø Verschw.",w:54,r:1},{h:"Ø ohne",w:54,r:1},{h:"Anteil",w:51.3,r:1}],
+    prodStats(()=>true).map(p=>[p.name,p.bereich,String(p.n),fmt(p.avg),fmt(p.min),fmt(p.max),fmt(p.aw),fmt(p.net),pctS(p.share)]));
+  // Spaghetti
+  const spSt=S.stations.filter(s=>S.spa[s.id]&&(S.spa[s.id].pts.length||S.spa[s.id].landmarks.length));
+  h2("Spaghetti-Diagramm – Laufwege");
+  table([{h:"Arbeitsplatz",w:70,b:1},{h:"Bereich",w:64},{h:"Fläche",w:50,r:1},{h:"Laufweg",w:52,r:1},{h:"Punkte",w:40,r:1},{h:"Teile",w:36,r:1},{h:"Weg je Teil",w:56,r:1},{h:"Weg je Std.",w:56,r:1},{h:"Längste Strecke",w:91.3,r:1}],
+    S.stations.map(s=>{ const sp=S.spa[s.id], x=spaStats(s.id); return [s.name,typName(s.id),`${sp.w}×${sp.h} m`,de1(x.len)+" m",String(x.n),String(x.parts),x.parts?de1(x.len/x.parts)+" m":"–",x.span>60000?de0(x.len/(x.span/3600000))+" m":"–",de1(x.longest)+" m"]; }));
+  col=0; rowH=0;
+  spSt.forEach(s=>{ const sp=S.spa[s.id], st=spaStats(s.id), bw=half, sc=Math.min((bw-16)/sp.w,150/sp.h), dw=sp.w*sc, dh=sp.h*sc, bh=dh+46;
+    if(col===0) ensure(bh+8); else if(y+bh>H-48){ y+=rowH; col=0; rowH=0; ensure(bh+8); }
+    const x=M+col*(half+16), ox=x+8, oy=y+24;
+    P.text(x,y+12,`${s.name} · ${de1(st.len)} m`,{size:9,bold:true,max:bw});
+    P.rect(ox,oy,dw,dh,{stroke:LINE,fill:"#FAFBFA"});
+    for(let i=1;i<sp.w;i++) P.line(ox+i*sc,oy,ox+i*sc,oy+dh,{color:"#E4E8E5",lw:0.3});
+    for(let i=1;i<sp.h;i++) P.line(ox,oy+i*sc,ox+dw,oy+i*sc,{color:"#E4E8E5",lw:0.3});
+    let seg=[]; const flush=()=>{ P.path(seg,{color:WST,lw:1.1}); seg=[]; };
+    sp.pts.forEach((p,i)=>{ if(p.brk&&i>0) flush(); seg.push([ox+p.x*sc,oy+p.y*sc]); }); flush();
+    sp.pts.forEach((p,i)=>{ const c=(i===0||p.brk)?ACC:WST; P.slice(ox+p.x*sc,oy+p.y*sc,1.8,0,0,360,c); });
+    sp.landmarks.forEach(l=>{ P.rect(ox+l.x*sc-3.5,oy+l.y*sc-3.5,7,7,{fill:INK}); P.text(ox+l.x*sc,oy+l.y*sc-6,`${l.name} (${st.visits[l.id]||0}×)`,{size:6.5,bold:true,align:"center"}); });
+    P.text(ox,oy+dh+10,`Raster 1 m · Fläche ${sp.w} × ${sp.h} m`,{size:6.5,color:MUT});
+    rowH=Math.max(rowH,bh+8); col++; if(col===2){ y+=rowH; col=0; rowH=0; } });
+  if(col) y+=rowH;
+  // Greifraum
+  h2("Greifraumanalyse","Gut: Zone 1 oder Zone 2 nach vorne. Bedingt: Zone 2 seitlich, Zone 3 nach vorne. Kritisch: Zone 3 seitlich, Zone 4 und jeder Griff nach hinten.");
+  table([{h:"Arbeitsplatz",w:62,b:1},{h:"Bereich",w:58},{h:"Griffe",w:34,r:1},{h:"Z1",w:34,r:1},{h:"Z2",w:34,r:1},{h:"Z3",w:34,r:1},{h:"Z4",w:34,r:1},{h:"Vorne",w:36,r:1},{h:"Links",w:34,r:1},{h:"Rechts",w:36,r:1},{h:"Hinten",w:36,r:1},{h:"Kritisch",w:62.3,r:1}],
+    S.stations.map(s=>{ const g=gripStats(S.grips.filter(x=>x.stationId===s.id)), q=v=>g.n?pctS(v/g.n):"–"; return [s.name,typName(s.id),String(g.n),...g.z.map(q),...g.d.map(q),q(g.r)]; }));
+  const GA=gripStats(S.grips);
+  if(GA.n){ ensure(30); const q=v=>pctS(v/GA.n);
+    [["Gut",GA.g,"#2E7D32"],["Bedingt",GA.y,"#B8860B"],["Kritisch",GA.r,"#B3261E"]].forEach(([l,v,c],i)=>{ const bw=(CW-16)/3, x=M+i*(bw+8); P.rect(x,y,bw,26,{fill:"#F4F6F5",stroke:LINE}); P.rect(x,y,4,26,{fill:c}); P.text(x+12,y+17,`${l}: ${q(v)} (${v} Griffe)`,{size:9,bold:true}); }); y+=36;
+    twoDonuts([1,2,3,4].map(z=>({l:["","Z1 Hauptgreifraum","Z2 Erweitert","Z3 Oberkörper","Z4 Schritt nötig"][z],v:GA.z[z-1],c:ZONE_C[z],f:v=>v+"×"})),Object.keys(DIRS).map((k,i)=>({l:DIRS[k],v:GA.d[i],c:DIR_C[k],f:v=>v+"×"})),"Alle Plätze nach Zonen","Alle Plätze nach Richtungen",v=>String(v)); }
+  // Fußzeilen
+  const n=P.pages.length;
+  P.pages.forEach((_,i)=>{ P.use(i); P.line(M,H-30,W-M,H-30,{color:LINE}); P.text(M,H-18,"Muda-Aufnahme Montage · Verschwendungsanalyse",{size:7,color:MUT}); P.text(W-M,H-18,`Seite ${i+1} von ${n}`,{size:7,color:MUT,align:"right"}); });
+  return P.bytes();
+}
+function expXLSX(){ try{ offerFile(`muda-aufnahme_${stamp()}.xlsx`,buildXlsx()); }catch(e){ console.error(e); toast("Excel-Export fehlgeschlagen: "+(e.message||e)); } }
+function expPDF(){ try{ offerFile(`muda-bericht_${stamp()}.pdf`,buildPdf()); }catch(e){ console.error(e); toast("PDF-Export fehlgeschlagen: "+(e.message||e)); } }
+
+/* ---------- Beispieldaten ---------- */
+function loadDemo(){
+  const t0=now()-70*60000;
+  let p1=S.products[0]; if(!p1){ p1={id:uid(),name:"Beispiel Anzeige A"}; S.products.push(p1); }
+  let p2=S.products[1]; if(!p2){ p2={id:uid(),name:"Beispiel Baugruppe B"}; S.products.push(p2); }
+  S.runs=[];S.wastes=[];S.grips=[];
+  const rnd=(a,b)=>a+Math.random()*(b-a);
+  S.stations.forEach((s,si)=>{
+    s.productId=s.type==="VM"?p2.id:p1.id; let t=t0+rnd(0,120000);
+    const base=s.type==="VM"?rnd(150,220):rnd(260,360);
+    while(t<now()-120000){
+      const d=base*1000*rnd(.85,1.3); const r={id:uid(),stationId:s.id,productId:s.productId,start:t,end:t+d}; S.runs.push(r);
+      let wt=t+rnd(5000,30000); const k=Math.floor(rnd(0,3));
+      for(let i=0;i<k&&wt<r.end-15000;i++){ const ty=S.wasteTypes[Math.floor(Math.pow(Math.random(),1.6)*S.wasteTypes.length)]; const wd=rnd(6000,40000); S.wastes.push({id:uid(),stationId:s.id,typeId:ty.id,start:wt,end:Math.min(r.end,wt+wd),runId:r.id}); wt+=wd+rnd(10000,40000); }
+      t=r.end+rnd(0,15000);
+    }
+    for(let i=0;i<40;i++){ const z=[1,1,1,2,2,2,3,3,4][Math.floor(rnd(0,9))], d=["V","V","V","V","L","R","R","H"][Math.floor(rnd(0,8))]; S.grips.push({id:uid(),stationId:s.id,zone:z,dir:d,t:t0+i*60000,runId:null}); }
+    const sp=S.spa[s.id]; if(!sp.landmarks.length) sp.landmarks=[{id:uid(),name:"Werkbank",x:sp.w*.3,y:sp.h*.5},{id:uid(),name:"Regal",x:sp.w*.85,y:sp.h*.2},{id:uid(),name:"Prüfplatz",x:sp.w*.7,y:sp.h*.8}];
+    sp.pts=[]; for(let i=0;i<24;i++){ const l=sp.landmarks[i%2?0:1+Math.floor(rnd(0,sp.landmarks.length-1))]; sp.pts.push({x:Math.round((l.x+rnd(-.4,.4))*100)/100,y:Math.round((l.y+rnd(-.4,.4))*100)/100,t:t0+i*150000,brk:i===0}); }
+  });
+  commit(); toast("Beispieldaten geladen");
+}
+
+/* ---------- Events ---------- */
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-act]"); if(!el) return;
+  if(el.dataset.confirm&&!el.classList.contains("armed")){ el.classList.add("armed"); el.dataset.orig=el.innerHTML; el.textContent=el.dataset.confirm; setTimeout(()=>{ if(el.isConnected){ el.classList.remove("armed"); el.innerHTML=el.dataset.orig; } },3500); return; }
+  const a=el.dataset.act, sid=el.dataset.sid, id=el.dataset.id, k=el.dataset.k;
+  switch(a){
+    case "tab": UI.tab=k; try{localStorage.setItem(LS_KEY+"-tab",k);}catch(_){} render(); window.scrollTo(0,0); break;
+    case "startRun": startRun(sid); break;
+    case "next": nextRun(sid); break;
+    case "stopRun": stopRun(sid); break;
+    case "pause": pauseRun(sid); break;
+    case "resume": resumeRun(sid); break;
+    case "pauseAll": S.stations.forEach(s=>pauseRun(s.id,true)); commit(); toast("Alle Arbeitsplätze pausiert"); break;
+    case "resumeAll": S.stations.forEach(s=>resumeRun(s.id,true)); commit(); toast("Alle Arbeitsplätze laufen wieder"); break;
+    case "waste": startWaste(sid,el.dataset.t); break;
+    case "stopWaste": stopWaste(sid); break;
+    case "scope": UI.scope=k; render(); break;
+    case "spaSid": UI.spaSid=k; render(); break;
+    case "spaMode": UI.spaMode=k; render(); break;
+    case "spaBreak": UI.spaBrk=true; toast("Nächster Punkt beginnt einen neuen Weg"); break;
+    case "spaUndo": S.spa[UI.spaSid].pts.pop(); commit(); break;
+    case "spaClear": S.spa[UI.spaSid].pts=[]; commit(); break;
+    case "greSid": UI.greSid=k; render(); break;
+    case "greScope": UI.greScope=k; render(); break;
+    case "grip": addGrip(+el.dataset.z,el.dataset.d); break;
+    case "gripUndo": { const i=S.grips.map(g=>g.stationId).lastIndexOf(UI.greSid); if(i>=0) S.grips.splice(i,1); commit(); break; }
+    case "gripClear": S.grips=S.grips.filter(g=>g.stationId!==UI.greSid); commit(); break;
+    case "proSid": UI.proSid=k; render(); break;
+    case "delW": S.wastes=S.wastes.filter(w=>w.id!==id); commit(); break;
+    case "delR": S.runs=S.runs.filter(r=>r.id!==id); S.wastes.forEach(w=>{ if(w.runId===id) w.runId=null; }); commit(); break;
+    case "addSt": { const n=S.stations.filter(s=>s.type===k).length+1; const s={id:uid(),name:`${k} ${n}`,worker:"",type:k,productId:null}; S.stations.push(s); S.spa[s.id]={w:10,h:6,landmarks:[],pts:[]}; commit(); break; }
+    case "delSt": S.stations=S.stations.filter(s=>s.id!==id); S.runs=S.runs.filter(r=>r.stationId!==id); S.wastes=S.wastes.filter(w=>w.stationId!==id); S.grips=S.grips.filter(g=>g.stationId!==id); delete S.spa[id]; commit(); break;
+    case "delT": S.wasteTypes=S.wasteTypes.filter(t=>t.id!==id); commit(); break;
+    case "delP": S.products=S.products.filter(p=>p.id!==id); S.stations.forEach(s=>{ if(s.productId===id) s.productId=null; }); commit(); break;
+    case "newT": openWasteTypeModal(null); break;
+    case "newP": openProductModal(null,false); break;
+    case "expX": expXLSX(); break;
+    case "expJ": expJSON(); break;
+    case "expP": expPDF(); break;
+    case "resetData": S.runs=[];S.wastes=[];S.grips=[]; Object.values(S.spa).forEach(sp=>sp.pts=[]); commit(); toast("Messdaten gelöscht"); break;
+    case "resetAll": S=freshState(); commit(); toast("Alles zurückgesetzt"); break;
+    case "demo": loadDemo(); break;
+  }
+});
+document.addEventListener("change",e=>{
+  const el=e.target;
+  if(el.id==="imp"&&el.files&&el.files[0]){ const fr=new FileReader(); fr.onload=()=>{ try{ const d=JSON.parse(fr.result); if(!d.stations) throw 0; S=normalize(d); commit(); toast("Sicherung eingelesen"); }catch(_){ toast("Datei ist keine gültige Sicherung"); } }; fr.readAsText(el.files[0]); el.value=""; return; }
+  const c=el.dataset.chg; if(!c) return;
+  const sid=el.dataset.sid, id=el.dataset.id, v=el.value;
+  switch(c){
+    case "prod": if(v==="__new"){ el.value=stById(sid).productId||""; openProductModal(sid,false); return; } stById(sid).productId=v||null; { const r=runOf(sid); if(r&&v) r.productId=v; } commit(); break;
+    case "waste": if(!v) return; if(v==="__new"){ el.value=""; openWasteTypeModal(sid); return; } startWaste(sid,v); break;
+    case "spaW": S.spa[UI.spaSid].w=Math.max(2,Math.min(60,+v||10)); commit(); break;
+    case "spaH": S.spa[UI.spaSid].h=Math.max(2,Math.min(60,+v||6)); commit(); break;
+    case "editType": { const w=S.wastes.find(x=>x.id===id); if(w){ w.typeId=v; commit(); } break; }
+    case "editProd": { const r=S.runs.find(x=>x.id===id); if(r){ r.productId=v||null; commit(); } break; }
+    case "stName": stById(id).name=v.trim()||stById(id).name; commit(); break;
+    case "stWorker": stById(id).worker=v.trim(); commit(); break;
+    case "stType": stById(id).type=v; commit(); break;
+    case "tName": if(v.trim()){ typeById(id).name=v.trim(); } commit(); break;
+    case "tMuda": typeById(id).muda=v; commit(); break;
+    case "pName": if(v.trim()){ prodById(id).name=v.trim(); } commit(); break;
+  }
+});
+
+/* ---------- Ticker ---------- */
+setInterval(()=>{
+  const t=now(); const d=new Date();
+  $("#clock").textContent=`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  document.querySelectorAll("[data-tick]").forEach(el=>{ const s=+el.dataset.tick; if(s) el.textContent=fmt(t-s); });
+  document.querySelectorAll("[data-tick-sum]").forEach(el=>{ el.textContent=fmt(stationStats(el.dataset.tickSum).wsum); });
+},500);
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&(S.runs.some(r=>!r.end)||S.wastes.some(w=>!w.end))) { wakeLock=null; keepAwake(); } });
+
+loadLocal(); render(); initCloud();
+try{ navigator.storage&&navigator.storage.persist&&navigator.storage.persist(); }catch(e){}
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
+})();
+</script>
+</body>
+</html>
